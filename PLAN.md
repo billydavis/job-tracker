@@ -117,6 +117,7 @@
 Install Bun (if not present): follow https://bun.sh
 
 Backend (from `backend/`):
+
 ```bash
 cd backend
 bun install
@@ -124,6 +125,7 @@ bun run dev
 ```
 
 Frontend (from `frontend/`):
+
 ```bash
 cd frontend
 bun install
@@ -131,6 +133,7 @@ bun run dev
 ```
 
 Docker Compose (example):
+
 ```bash
 docker compose up --build
 ```
