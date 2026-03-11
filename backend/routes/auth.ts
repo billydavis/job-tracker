@@ -21,6 +21,23 @@ function buildCookie(token: string) {
   return `token=${token}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=${sameSite}${secure}`;
 }
 
+function parseCookie(header: string | null, name: string) {
+  if (!header) return '';
+  const pairs = header.split(';').map(p => p.trim());
+  for (const p of pairs) {
+    const [k, v] = p.split('=');
+    if (k === name) return v ?? '';
+  }
+  return '';
+}
+
+function getTokenFromRequest(c: any) {
+  const authHeader = c.req.header('authorization') ?? '';
+  const tokenFromHeader = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const tokenFromCookie = parseCookie(c.req.header('cookie'), 'token');
+  return tokenFromHeader || tokenFromCookie || '';
+}
+
 // Register
 authRouter.post('/register', async c => {
   const body = await c.req.json();
@@ -74,6 +91,28 @@ authRouter.post('/logout', async c => {
   const sameSite = process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax';
   c.header('Set-Cookie', `token=; HttpOnly; Path=/; Max-Age=0; SameSite=${sameSite}${secure}`);
   return c.json({ ok: true });
+});
+
+// Refresh cookie-based auth token
+authRouter.post('/refresh', async c => {
+  const token = getTokenFromRequest(c);
+  if (!token) return c.json({ error: 'Unauthorized' }, 401);
+
+  try {
+    const secret = process.env.JWT_SECRET ?? 'dev-secret';
+    const payload = jwt.verify(token, secret, { ignoreExpiration: true }) as Record<string, any>;
+    if (!payload?.id || !payload?.email) return c.json({ error: 'Unauthorized' }, 401);
+
+    const users = await getCollection('users');
+    const userDoc = await users.findOne({ _id: getObjectId(payload.id) } as any);
+    if (!userDoc) return c.json({ error: 'Unauthorized' }, 401);
+
+    const nextToken = makeToken({ id: payload.id, email: payload.email });
+    c.header('Set-Cookie', buildCookie(nextToken));
+    return c.json({ ok: true });
+  } catch {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
 });
 
 // Get current authenticated user

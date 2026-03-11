@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { getCollection, getObjectId } from '../db';
-import { createJobSchema } from '../validators/jobs';
+import { createJobSchema, updateJobSchema } from '../validators/jobs';
 import { normalizeArray, normalizeDoc } from '../utils/dto';
 
 const jobsRouter = new Hono();
@@ -57,6 +57,49 @@ jobsRouter.get('/:id', async c => {
     if (authUser?.id) filter.userId = getObjectId(authUser.id);
     const doc = await col.findOne(filter as any);
     return doc ? c.json(normalizeDoc(doc)) : c.body(null, 404);
+});
+
+// Update job (partial)
+jobsRouter.put('/:id', async c => {
+    const id = c.req.param('id') as string;
+    const body = await c.req.json();
+    const parsed = updateJobSchema.safeParse(body);
+    if (!parsed.success) return c.json({ errors: parsed.error.format() }, 400);
+
+    const authUser = c.get('user') as any;
+    if (!authUser?.id) return c.json({ error: 'Unauthorized' }, 401);
+
+    const updates: any = {};
+    if (parsed.data.companyId !== undefined) updates.companyId = getObjectId(parsed.data.companyId);
+    if (parsed.data.title !== undefined) updates.title = parsed.data.title;
+    if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+    if (parsed.data.contact !== undefined) updates.contact = parsed.data.contact;
+    if (parsed.data.location !== undefined) updates.location = parsed.data.location;
+    if (parsed.data.salary !== undefined) updates.salary = parsed.data.salary;
+    if (parsed.data.url !== undefined) updates.url = parsed.data.url;
+    if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (parsed.data.dateApplied !== undefined) updates.dateApplied = parsed.data.dateApplied;
+    if (body.updatedAt === undefined) updates.updatedAt = new Date().toISOString();
+
+    const col = await getCollection('jobs');
+    const res = await col.findOneAndUpdate(
+        { _id: getObjectId(id), userId: getObjectId(authUser.id) } as any,
+        { $set: updates },
+        { returnDocument: 'after' } as any
+    );
+    const doc = res.value;
+    return doc ? c.json(normalizeDoc(doc)) : c.body(null, 404);
+});
+
+// Delete job
+jobsRouter.delete('/:id', async c => {
+    const id = c.req.param('id') as string;
+    const authUser = c.get('user') as any;
+    if (!authUser?.id) return c.json({ error: 'Unauthorized' }, 401);
+
+    const col = await getCollection('jobs');
+    const res = await col.deleteOne({ _id: getObjectId(id), userId: getObjectId(authUser.id) } as any);
+    return c.body(null, res.deletedCount ? 204 : 404);
 });
 
 // GET job with its notes

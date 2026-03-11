@@ -63,4 +63,30 @@ describe('Integration — auth routes (real MongoDB)', () => {
         expect(loginJson.user).toBeTruthy();
         expect(loginJson.user.email).toBe(payload.email);
     });
+
+    it('refreshes auth cookie when a valid token cookie is present', async () => {
+        const payload = { name: 'Refresh User', email: 'refresh@example.com', password: 'password123' };
+        const regReq = new Request('http://localhost/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const regRes = await app.fetch(regReq);
+        expect(regRes.status).toBe(201);
+
+        const setCookie = regRes.headers.get('set-cookie');
+        expect(setCookie).toBeTruthy();
+        const cookie = (setCookie ?? '').split(';')[0];
+
+        const refreshReq = new Request('http://localhost/api/auth/refresh', {
+            method: 'POST',
+            headers: { Cookie: cookie },
+        });
+        const refreshRes = await app.fetch(refreshReq);
+        expect(refreshRes.status).toBe(200);
+
+        const refreshJson = await refreshRes.json() as any;
+        expect(refreshJson.ok).toBe(true);
+        expect(refreshRes.headers.get('set-cookie')).toContain('token=');
+    });
 });
