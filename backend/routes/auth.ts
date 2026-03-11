@@ -71,9 +71,6 @@ authRouter.post('/login', async c => {
   const userDoc = await users.findOne({ email: parsed.data.email } as any);
   if (!userDoc) return c.json({ error: 'invalid credentials' }, 401);
 
-  // Debug: log password values during tests if needed
-  // eslint-disable-next-line no-console
-  console.error('auth login trying:', parsed.data.email, parsed.data.password, userDoc.passwordHash);
   const ok = await bcrypt.compare(parsed.data.password, userDoc.passwordHash ?? '');
   if (!ok) return c.json({ error: 'invalid credentials' }, 401);
 

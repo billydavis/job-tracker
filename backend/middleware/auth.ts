@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import jwt from 'jsonwebtoken';
+import { logger } from '../utils/logger';
 
 // Hono middleware to verify JWT from Authorization header or cookie 'token'.
 // On success sets `c.set('user', payload)` where payload is the decoded token.
@@ -29,20 +30,16 @@ export async function auth(c: Context, next: () => Promise<void>) {
     }
 
     const source = tokenFromHeader ? 'header' : tokenFromCookie ? 'cookie' : 'unknown';
-    if (process.env.NODE_ENV !== 'production') {
-        console.debug(`[auth] token source: ${source}`);
-    }
+    logger.debug('auth token source', { source });
 
     try {
         const secret = process.env.JWT_SECRET ?? 'dev-secret';
         const payload = jwt.verify(token, secret) as Record<string, any>;
-        if (process.env.NODE_ENV !== 'production') {
-            console.debug('[auth] verified payload:', { id: payload.id, email: payload.email, exp: payload.exp });
-        }
+        logger.debug('auth token verified', { id: payload.id, email: payload.email, exp: payload.exp });
         c.set('user', payload);
         await next();
     } catch (err: any) {
-        console.error('auth middleware verify error:', err?.message ?? err);
+        logger.warn('auth token invalid', { err: err?.message ?? String(err) });
         return c.json({ error: 'Unauthorized' }, 401);
     }
 }

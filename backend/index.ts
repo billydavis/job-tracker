@@ -6,6 +6,7 @@ import notesRouter from './routes/notes';
 import companiesRouter from './routes/companies';
 import authRouter from './routes/auth';
 import auth from './middleware/auth';
+import { logger } from './utils/logger';
 
 const app = new Hono();
 
@@ -44,6 +45,17 @@ app.use('*', async (c, next) => {
 	}
 });
 
+// HTTP request logger — skip OPTIONS preflights
+app.use('*', async (c, next) => {
+	if (c.req.method === 'OPTIONS') { await next(); return; }
+	const start = Date.now();
+	const method = c.req.method;
+	const path = new URL(c.req.url).pathname;
+	await next();
+	const status = c.res.status;
+	logger.info('http', { method, path, status, durationMs: Date.now() - start });
+});
+
 app.get('/api/health', c => c.json({ ok: true }));
 
 app.route('/api/users', usersRouter);
@@ -62,4 +74,4 @@ app.route('/api/companies', companiesRouter);
 
 const port = Number(process.env.PORT ?? 4000);
 const server = serve({ fetch: app.fetch, port });
-console.log(`Backend server running at ${server?.url}`);
+logger.info('server started', { url: String(server?.url ?? ''), port });

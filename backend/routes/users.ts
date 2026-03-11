@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { getCollection, getObjectId } from '../db';
 import { normalizeArray, normalizeDoc } from '../utils/dto';
+import { logger } from '../utils/logger';
 
 const usersRouter = new Hono();
 
@@ -20,7 +21,7 @@ usersRouter.post('/', async c => {
         const saved = await col.findOne({ _id: res.insertedId } as any);
         return c.json(saved ? normalizeDoc(saved) : { ...doc, _id: res.insertedId.toString() }, 201);
     } catch (err: any) {
-        console.error('POST /api/users error', err);
+        logger.error('POST /api/users failed', { err: err?.message ?? String(err) });
         return c.json({ error: String(err?.message ?? err) }, 500);
     }
 });
