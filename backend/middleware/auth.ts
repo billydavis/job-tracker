@@ -10,7 +10,7 @@ export async function auth(c: Context, next: () => Promise<void>) {
 
     // Hono request may not expose a `cookie()` helper in all environments
     // so parse `Cookie` header manually.
-    function parseCookie(header: string | null, name: string) {
+    function parseCookie(header: string | null | undefined, name: string) {
         if (!header) return '';
         const pairs = header.split(';').map(p => p.trim());
         for (const p of pairs) {

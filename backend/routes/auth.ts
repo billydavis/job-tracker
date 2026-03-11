@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { getCollection, getObjectId } from '../db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import type { SignOptions } from 'jsonwebtoken';
 import auth from '../middleware/auth';
 import { registerSchema, loginSchema } from '../validators/auth';
 import { normalizeDoc } from '../utils/dto';
@@ -10,7 +11,7 @@ const authRouter = new Hono();
 
 function makeToken(payload: any) {
   const secret = process.env.JWT_SECRET ?? 'dev-secret';
-  const expiresIn = process.env.JWT_EXPIRES_IN ?? '15m';
+  const expiresIn = (process.env.JWT_EXPIRES_IN ?? '15m') as SignOptions['expiresIn'];
   return jwt.sign(payload, secret, { expiresIn });
 }
 

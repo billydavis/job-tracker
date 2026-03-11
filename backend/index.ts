@@ -16,14 +16,7 @@ app.use('*', async (c, next) => {
 		// Allow CORS for credentialed requests by echoing the request Origin.
 		// Browsers require a non-wildcard Access-Control-Allow-Origin when credentials
 		// are used. We also allow credentials so cookies can be set when appropriate.
-		// Robustly read Origin header from different header shapes (Headers or plain object)
-		let origin = '';
-		const hdrs = c.req?.headers || (c.req as any)?.raw?.headers || {};
-		if (hdrs && typeof hdrs.get === 'function') {
-			origin = hdrs.get('Origin') || hdrs.get('origin') || '';
-		} else if (hdrs && typeof hdrs === 'object') {
-			origin = hdrs['origin'] || hdrs['Origin'] || '';
-		}
+		const origin = c.req.header('origin') ?? c.req.header('Origin') ?? '';
 		const allowOrigin = origin || '*';
 		c.header('Access-Control-Allow-Origin', allowOrigin);
 		c.header('Vary', 'Origin');
