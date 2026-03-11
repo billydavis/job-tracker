@@ -56,10 +56,13 @@ app.route('/api/auth', authRouter);
 
 // Protect CRUD endpoints with auth middleware; tokens may be sent via
 // `Authorization: Bearer <token>` or cookie `token`.
-// Apply auth to the router roots so both root and nested routes are protected
+// Mount both exact and wildcard paths so collection and nested CRUD routes are protected.
 app.use('/api/jobs', auth);
+app.use('/api/jobs/*', auth);
 app.use('/api/companies', auth);
+app.use('/api/companies/*', auth);
 app.use('/api/notes', auth);
+app.use('/api/notes/*', auth);
 
 app.route('/api/jobs', jobsRouter);
 app.route('/api/notes', notesRouter);

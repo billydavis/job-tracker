@@ -72,7 +72,7 @@ notesRouter.put('/:id', async c => {
     { $set: { content: parsed.data.content, updatedAt: new Date().toISOString() } },
     { returnDocument: 'after' } as any
   );
-  const doc = res.value;
+  const doc = res;
   return doc ? c.json(normalizeDoc(doc)) : c.body(null, 404);
 });
 

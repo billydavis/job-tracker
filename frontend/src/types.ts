@@ -29,6 +29,24 @@ export interface Job {
   status: JobStatus
   dateApplied?: string
   createdAt?: string
+  updatedAt?: string
+}
+
+export interface Company {
+  _id?: string
+  userId?: string
+  name: string
+  website?: string
+  description?: string
+  createdAt?: string
+}
+
+export interface Note {
+  _id?: string
+  jobId: string
+  content: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface ApiError {

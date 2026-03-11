@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import JobDetails from './pages/JobDetails'
 import ProtectedRoute from './components/routes/ProtectedRoute'
 import PublicOnlyRoute from './components/routes/PublicOnlyRoute'
 import AuthLayout from './components/layouts/AuthLayout'
@@ -51,6 +52,7 @@ export default function App() {
       >
         {/* user is guaranteed non-null inside ProtectedRoute */}
         <Route path="/dashboard" element={<Dashboard user={user!} />} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
       </Route>
 
       <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />

@@ -1,4 +1,4 @@
-import type { User, Job, ApiError } from '../types'
+import type { User, Job, Company, Note, ApiError } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 
@@ -98,6 +98,10 @@ export function getJobs(): Promise<Job[]> {
   return request('/api/jobs') as Promise<Job[]>
 }
 
+export function getJob(id: string): Promise<Job> {
+  return request(`/api/jobs/${id}`) as Promise<Job>
+}
+
 export function createJob(payload: Partial<Job>): Promise<Job> {
   return request('/api/jobs', {
     method: 'POST',
@@ -118,4 +122,57 @@ export function deleteJob(id: string): Promise<void> {
   }) as Promise<void>
 }
 
-export default { login, register, me, logout, getJobs, createJob, updateJob, deleteJob }
+// ── Companies ─────────────────────────────────────────────────────────────────
+
+export function getCompanies(): Promise<Company[]> {
+  return request('/api/companies') as Promise<Company[]>
+}
+
+export function createCompany(payload: Pick<Company, 'name' | 'website' | 'description'>): Promise<Company> {
+  return request('/api/companies', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<Company>
+}
+
+export function updateCompany(id: string, payload: Partial<Company>): Promise<Company> {
+  return request(`/api/companies/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }) as Promise<Company>
+}
+
+export function deleteCompany(id: string): Promise<void> {
+  return request(`/api/companies/${id}`, { method: 'DELETE' }) as Promise<void>
+}
+
+// ── Notes ─────────────────────────────────────────────────────────────────────
+
+export function getNotes(jobId: string): Promise<Note[]> {
+  return request(`/api/notes?jobId=${encodeURIComponent(jobId)}`) as Promise<Note[]>
+}
+
+export function createNote(payload: { jobId: string; content: string }): Promise<Note> {
+  return request('/api/notes', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<Note>
+}
+
+export function updateNote(id: string, content: string): Promise<Note> {
+  return request(`/api/notes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ content }),
+  }) as Promise<Note>
+}
+
+export function deleteNote(id: string): Promise<void> {
+  return request(`/api/notes/${id}`, { method: 'DELETE' }) as Promise<void>
+}
+
+export default {
+  login, register, me, logout,
+  getJobs, getJob, createJob, updateJob, deleteJob,
+  getCompanies, createCompany, updateCompany, deleteCompany,
+  getNotes, createNote, updateNote, deleteNote,
+}

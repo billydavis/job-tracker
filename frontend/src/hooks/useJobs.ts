@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createJob, deleteJob, getJobs, updateJob } from '../api/client'
+import { createJob, deleteJob, getJob, getJobs, updateJob } from '../api/client'
 import type { Job } from '../types'
 
 export const jobsQueryKey = ['jobs'] as const
@@ -9,6 +9,14 @@ export function useJobsQuery() {
     queryKey: jobsQueryKey,
     queryFn: getJobs,
     select: (data) => data ?? [],
+  })
+}
+
+export function useJobQuery(id: string) {
+  return useQuery<Job>({
+    queryKey: [...jobsQueryKey, id],
+    queryFn: () => getJob(id),
+    enabled: Boolean(id),
   })
 }
 

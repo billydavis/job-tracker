@@ -87,7 +87,7 @@ jobsRouter.put('/:id', async c => {
         { $set: updates },
         { returnDocument: 'after' } as any
     );
-    const doc = res.value;
+    const doc = res;
     return doc ? c.json(normalizeDoc(doc)) : c.body(null, 404);
 });
 

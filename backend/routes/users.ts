@@ -42,7 +42,7 @@ usersRouter.put('/:id', async c => {
         { $set: { name: body.name, email: body.email } },
         { returnDocument: 'after' } as any
     );
-    const doc = res.value;
+    const doc = res;
     return doc ? c.json(normalizeDoc(doc)) : c.body(null, 404);
 });
 
