@@ -4,9 +4,21 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/jsonwebtoken": "^9.0.10",
+    "vitest": "^4.0.18"
+  },
+  "scripts": {
+    "test": "vitest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "hono": "^4.12.5",
+    "jsonwebtoken": "^9.0.3",
+    "mangodb": "^1.0.0",
+    "mongodb": "^7.1.0"
   }
 }

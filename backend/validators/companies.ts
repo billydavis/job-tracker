@@ -1,0 +1,10 @@
+import { z } from 'zod';
+
+export const createCompanySchema = z.object({
+  name: z.string().min(1, 'name is required'),
+});
+
+export const updateCompanySchema = createCompanySchema.partial();
+
+export type CreateCompany = z.infer<typeof createCompanySchema>;
+export type UpdateCompany = z.infer<typeof updateCompanySchema>;
