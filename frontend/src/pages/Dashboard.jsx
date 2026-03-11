@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { getJobs, logout } from '../api/client'
 
 const STATUS_STYLES = {
-    applied:      'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+    applied: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
     interviewing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    offer:        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    rejected:     'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+    offer: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    rejected: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 }
 
 export default function Dashboard({ user, onLogout }) {
@@ -21,7 +21,7 @@ export default function Dashboard({ user, onLogout }) {
     }, [])
 
     async function handleLogout() {
-        try { await logout() } catch {}
+        try { await logout() } catch { }
         onLogout()
     }
 

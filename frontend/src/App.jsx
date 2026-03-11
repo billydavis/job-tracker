@@ -20,7 +20,7 @@ export default function App() {
     useEffect(() => {
         me()
             .then((res) => { if (res?._id) setUser(res) })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoading(false))
     }, [])
 
