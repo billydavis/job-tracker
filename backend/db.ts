@@ -1,15 +1,22 @@
 import { MongoClient, ObjectId } from 'mongodb';
 
-const uri = process.env.MONGO_URI ?? 'mongodb://localhost:27017';
-const dbName = process.env.MONGO_DB ?? 'job-tracker';
-
 let client: MongoClient | null = null;
+
+function getUri() {
+  return process.env.MONGO_URI ?? 'mongodb://localhost:27017';
+}
+
+function getDbName() {
+  return process.env.MONGO_DB ?? 'job-tracker';
+}
 
 export async function connect() {
   if (!client) {
+    const uri = getUri();
     client = new MongoClient(uri);
     await client.connect();
   }
+  const dbName = getDbName();
   return client.db(dbName);
 }
 

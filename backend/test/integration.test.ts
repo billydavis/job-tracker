@@ -8,9 +8,6 @@ import notesRouter from '../routes/notes';
 import auth from '../middleware/auth';
 import { connect, getCollection } from '../db';
 
-// Use a dedicated test database
-process.env.MONGO_DB = process.env.MONGO_DB ?? 'job-tracker-test';
-
 describe('Integration — auth routes (real MongoDB)', () => {
     let app: Hono;
 

@@ -201,7 +201,16 @@ export default function Dashboard({ user }: Props) {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{companyName(j.companyId)}</p>
+                  {j.companyId ? (
+                    <Link
+                      to={`/companies/${j.companyId}`}
+                      className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {companyName(j.companyId)}
+                    </Link>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{companyName(j.companyId)}</p>
+                  )}
                   {j._id && <NotesPanel jobId={j._id} />}
                 </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import MDEditor from '@uiw/react-md-editor'
 import { useCompaniesQuery } from '../hooks/useCompanies'
 import { useJobQuery, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
@@ -178,7 +178,16 @@ export default function JobDetails() {
               ← Back to dashboard
             </button>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{job.title}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{companyName}</p>
+            {job.companyId ? (
+              <Link
+                to={`/companies/${job.companyId}`}
+                className="text-sm text-gray-500 dark:text-gray-400 mt-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                {companyName}
+              </Link>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{companyName}</p>
+            )}
           </div>
           <div className="flex flex-col items-end gap-2">
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>

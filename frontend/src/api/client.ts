@@ -128,6 +128,10 @@ export function getCompanies(): Promise<Company[]> {
   return request('/api/companies') as Promise<Company[]>
 }
 
+export function getCompany(id: string): Promise<Company> {
+  return request(`/api/companies/${id}`) as Promise<Company>
+}
+
 export function createCompany(payload: Pick<Company, 'name' | 'website' | 'description'>): Promise<Company> {
   return request('/api/companies', {
     method: 'POST',
@@ -173,6 +177,6 @@ export function deleteNote(id: string): Promise<void> {
 export default {
   login, register, me, logout,
   getJobs, getJob, createJob, updateJob, deleteJob,
-  getCompanies, createCompany, updateCompany, deleteCompany,
+  getCompanies, getCompany, createCompany, updateCompany, deleteCompany,
   getNotes, createNote, updateNote, deleteNote,
 }

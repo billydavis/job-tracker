@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createCompany, deleteCompany, getCompanies, updateCompany } from '../api/client'
+import { createCompany, deleteCompany, getCompanies, getCompany, updateCompany } from '../api/client'
 import type { Company } from '../types'
 
 export const companiesQueryKey = ['companies'] as const
@@ -9,6 +9,14 @@ export function useCompaniesQuery() {
     queryKey: companiesQueryKey,
     queryFn: getCompanies,
     select: (data) => data ?? [],
+  })
+}
+
+export function useCompanyQuery(id: string) {
+  return useQuery<Company>({
+    queryKey: [...companiesQueryKey, id],
+    queryFn: () => getCompany(id),
+    enabled: Boolean(id),
   })
 }
 

@@ -29,7 +29,13 @@ companiesRouter.post('/', async c => {
   if (!parsed.success) return c.json({ errors: parsed.error.format() }, 400);
   const col = await getCollection('companies');
   const now = new Date().toISOString();
-  const doc = { userId: getObjectId(authUser.id), name: parsed.data.name, createdAt: now } as any;
+  const doc = {
+    userId: getObjectId(authUser.id),
+    name: parsed.data.name,
+    website: parsed.data.website,
+    description: parsed.data.description,
+    createdAt: now,
+  } as any;
   const res = await col.insertOne(doc);
   const saved = await col.findOne({ _id: res.insertedId } as any);
   return c.json(saved ? normalizeDoc(saved) : { ...doc, _id: res.insertedId.toString(), userId: authUser.id }, 201);
@@ -58,6 +64,8 @@ companiesRouter.put('/:id', async c => {
   const col = await getCollection('companies');
   const updates: any = {};
   if (parsed.data.name) updates.name = parsed.data.name;
+  if (parsed.data.website !== undefined) updates.website = parsed.data.website;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
   if (body.updatedAt === undefined) updates.updatedAt = new Date().toISOString();
   const res = await col.findOneAndUpdate(
     { _id: getObjectId(id), userId: getObjectId(authUser.id) } as any,
