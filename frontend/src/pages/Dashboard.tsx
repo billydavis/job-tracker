@@ -7,17 +7,17 @@ import { useCompaniesQuery } from '../hooks/useCompanies'
 import JobModal, { type JobFormData } from '../components/JobModal'
 import NotesPanel from '../components/NotesPanel'
 
-const STATUS_STYLES: Record<JobStatus, string> = {
-  waiting:     'bg-gray-100     text-gray-600  dark:bg-gray-700        dark:text-gray-300',
-  applied:     'bg-blue-100     text-blue-700  dark:bg-blue-900/30     dark:text-blue-400',
-  interview:   'bg-violet-100   text-violet-700 dark:bg-violet-900/30  dark:text-violet-400',
-  offer:       'bg-green-100    text-green-700 dark:bg-green-900/30    dark:text-green-400',
-  negotiation: 'bg-amber-100    text-amber-700 dark:bg-amber-900/30    dark:text-amber-400',
-  rejected:    'bg-red-100      text-red-600   dark:bg-red-900/30      dark:text-red-400',
-  ghosted:     'bg-zinc-100     text-zinc-500  dark:bg-zinc-800        dark:text-zinc-400',
-}
-
 const ALL_STATUSES: JobStatus[] = ['waiting','applied','interview','offer','negotiation','rejected','ghosted']
+
+const STATUS_STYLES: Record<JobStatus, string> = {
+  waiting: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  applied: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  interview: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+  offer: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  negotiation: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  rejected: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  ghosted: 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
+}
 
 interface Props { user: User }
 
@@ -166,7 +166,7 @@ export default function Dashboard({ user }: Props) {
       )}
 
       {!loading && !error && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
           {filtered.length === 0 ? (
             <div className="px-6 py-14 text-center">
               <p className="font-medium text-gray-500 dark:text-gray-400">
@@ -223,7 +223,13 @@ export default function Dashboard({ user }: Props) {
                       className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_STYLES[j.status]}`}
                     >
                       {ALL_STATUSES.map(s => (
-                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        <option
+                          key={s}
+                          value={s}
+                          className="bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                        >
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </option>
                       ))}
                     </select>
                     <button

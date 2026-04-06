@@ -18,7 +18,6 @@
     "bcryptjs": "^3.0.3",
     "hono": "^4.12.5",
     "jsonwebtoken": "^9.0.3",
-    "mangodb": "^1.0.0",
     "mongodb": "^7.1.0"
   }
 }

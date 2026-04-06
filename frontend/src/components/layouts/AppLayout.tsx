@@ -8,7 +8,7 @@ interface Props {
 
 export default function AppLayout({ theme, setTheme }: Props) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-slate-200/80 dark:bg-gray-900 transition-colors duration-200">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-6 py-3 flex items-center justify-between">
         <span className="font-semibold text-gray-900 dark:text-white text-lg tracking-tight">Job Tracker</span>
         <button

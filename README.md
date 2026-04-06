@@ -5,10 +5,10 @@ Lightweight job-application tracker built with Bun + TypeScript backend and Reac
 ## Tech stack
 
 - Runtime & package manager: Bun
-- Backend: TypeScript, Bun-compatible HTTP framework (e.g., Hono), Postgres, Drizzle ORM (recommended)
-- Frontend: React + Vite + TypeScript, ShadeCDN components
-- Testing: Vitest (backend/frontend), optional Playwright/Cypress for E2E
-- Containerization: Docker / Docker Compose
+- Backend: TypeScript, Hono, MongoDB (raw driver)
+- Frontend: React + Vite + TypeScript, Radix UI + Tailwind CSS
+- Testing: Vitest
+- Containerization: Docker / Docker Compose (planned)
 
 ## Prerequisites
 
