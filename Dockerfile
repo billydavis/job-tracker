@@ -9,8 +9,8 @@ RUN bun run build
 # Stage 2: Backend runtime
 FROM oven/bun:1 AS runner
 WORKDIR /app
-COPY backend/package.json backend/bun.lock* ./
-RUN bun install --frozen-lockfile --production
+COPY backend/package.json ./
+RUN bun install --production
 COPY backend/ .
 # Copy built frontend assets so Hono can serve them
 COPY --from=frontend-builder /app/frontend/dist ./dist
