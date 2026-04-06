@@ -4,6 +4,7 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/bun.lock* ./
 RUN bun install --frozen-lockfile
 COPY frontend/ .
+COPY tsconfig.base.json ../tsconfig.base.json
 RUN bun run build
 
 # Stage 2: Backend runtime
