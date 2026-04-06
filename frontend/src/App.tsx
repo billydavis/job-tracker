@@ -52,7 +52,7 @@ export default function App() {
         }
       >
         {/* user is guaranteed non-null inside ProtectedRoute */}
-        <Route path="/dashboard" element={<Dashboard user={user!} />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/companies/:id" element={<CompanyDetails />} />
       </Route>

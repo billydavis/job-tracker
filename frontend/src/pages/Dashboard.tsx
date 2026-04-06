@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { User, Job, JobStatus } from '../types'
+import { Pencil, X } from 'lucide-react'
+import type { Job, JobStatus } from '../types'
 import { useJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation } from '../hooks/useJobs'
-import { useLogoutMutation } from '../hooks/useAuth'
 import { useCompaniesQuery } from '../hooks/useCompanies'
 import JobModal, { type JobFormData } from '../components/JobModal'
 import NotesPanel from '../components/NotesPanel'
@@ -18,8 +18,6 @@ const STATUS_STYLES: Record<JobStatus, string> = {
   rejected: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   ghosted: 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
 }
-
-interface Props { user: User }
 
 function getDateAppliedTimestamp(job: Job) {
   if (!job.dateApplied) return Number.NEGATIVE_INFINITY
@@ -38,10 +36,9 @@ function formatAppliedDate(dateApplied?: string) {
   }).format(new Date(timestamp))
 }
 
-export default function Dashboard({ user }: Props) {
+export default function Dashboard() {
   const { data: jobs = [], isLoading: loading, error } = useJobsQuery()
   const { data: companies = [] } = useCompaniesQuery()
-  const logoutMutation = useLogoutMutation()
   const createJobMutation = useCreateJobMutation()
   const updateJobMutation = useUpdateJobMutation()
   const deleteJobMutation = useDeleteJobMutation()
@@ -50,10 +47,6 @@ export default function Dashboard({ user }: Props) {
   const [editingJob, setEditingJob] = useState<Job | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState<JobStatus | ''>('')
   const [search, setSearch] = useState('')
-
-  async function handleLogout() {
-    try { await logoutMutation.mutateAsync() } catch { /* cache cleared in onSettled */ }
-  }
 
   async function handleModalSubmit(form: JobFormData) {
     const payload: Partial<Job> = {
@@ -109,28 +102,17 @@ export default function Dashboard({ user }: Props) {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Applications</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Hi, {user.name || user.email}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={openCreate}
-            className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-          >
-            + Add job
-          </button>
-          <button
-            onClick={handleLogout}
-            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            Logout
-          </button>
-        </div>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Applications</h1>
+        <button
+          onClick={openCreate}
+          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+        >
+          + Add job
+        </button>
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-wrap gap-2 mb-4">
         <input
           type="search"
           value={search}
@@ -234,18 +216,18 @@ export default function Dashboard({ user }: Props) {
                     </select>
                     <button
                       onClick={() => openEdit(j)}
-                      className="text-sm text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-1"
+                      className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-1"
                       title="Edit"
                     >
-                      ✎
+                      <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => handleDelete(j._id!)}
                       disabled={deleteJobMutation.isPending}
-                      className="text-sm text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors px-1 disabled:opacity-50"
+                      className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors px-1 disabled:opacity-50"
                       title="Delete"
                     >
-                      ✕
+                      <X size={14} />
                     </button>
                   </div>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Applied {formatAppliedDate(j.dateApplied)}</p>

@@ -1,0 +1,3 @@
+jobtracker.billydavis.dev {
+    reverse_proxy app:4000
+}

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { serve } from 'bun';
+import { serveStatic } from 'hono/bun';
 import usersRouter from './routes/users';
 import jobsRouter from './routes/jobs';
 import notesRouter from './routes/notes';
@@ -67,6 +68,13 @@ app.use('/api/notes/*', auth);
 app.route('/api/jobs', jobsRouter);
 app.route('/api/notes', notesRouter);
 app.route('/api/companies', companiesRouter);
+
+// In production, serve the built React app. API routes registered above take
+// priority. The second handler is the SPA fallback for client-side routes.
+if (process.env.NODE_ENV === 'production') {
+	app.use('*', serveStatic({ root: './dist' }));
+	app.use('*', async (c) => c.html(await Bun.file('./dist/index.html').text()));
+}
 
 const port = Number(process.env.PORT ?? 4000);
 const server = serve({ fetch: app.fetch, port });
