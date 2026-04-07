@@ -1,14 +1,38 @@
 # Job Tracker
 
-Lightweight job-application tracker built with Bun + TypeScript backend and React frontend. This repo is a monorepo skeleton for a learning/project starter: it includes `backend/` and `frontend/` folders, a development plan (`PLAN.md`), and Docker-friendly configs.
+A personal job-application tracker I built and actively use during my job search. It lets me track applications, companies, and notes across every stage of the hiring process. The app is containerized with Docker and deployed on a DigitalOcean droplet.
+
+I'm a .NET developer with many years of experience who was recently laid off. I built this project for its practical utility, but also as an opportunity to venture outside my usual stack — exploring TypeScript, Bun, React, and MongoDB — and to learn how to work effectively with AI-assisted development tools like Claude Code. The main thing I want any potential employer to take away is that I'm still hungry to learn and not afraid to pick up new tools and technologies.
+
+If you're interested in hiring me or want to know more about my background, you can find me at [billydavis.dev](http://billydavis.dev).
 
 ## Tech stack
 
-- Runtime & package manager: Bun
-- Backend: TypeScript, Hono, MongoDB (raw driver)
-- Frontend: React + Vite + TypeScript, Radix UI + Tailwind CSS
-- Testing: Vitest
-- Containerization: Docker / Docker Compose (planned)
+### Runtime & package manager
+- **Bun** — used for both the backend runtime and as the package manager across the monorepo. Replaces Node.js and npm/yarn entirely.
+
+### Backend
+- **TypeScript** — strictly typed throughout
+- **Hono** — lightweight, fast web framework with a familiar Express-like API, running directly on Bun
+- **MongoDB** — document database accessed via the raw `mongodb` driver (no ORM). A lazy-initialized singleton client exposes `getCollection()` and `getObjectId()` helpers.
+- **JWT authentication** — tokens issued on login and stored in HTTP-only cookies. A refresh token flow handles silent re-authentication. Route middleware validates tokens and attaches the user payload to the request context.
+- **Structured logging** — custom logger that outputs colored text in development and JSON in production, with method, path, status, and duration on every request.
+
+### Frontend
+- **React 18** — UI library
+- **Vite** — build tool and dev server. Proxies `/api/*` to the backend in development so cookies work without CORS issues.
+- **React Router v7** — client-side routing with protected route wrappers for authenticated and public-only pages
+- **TanStack React Query v5** — all server state lives here. Custom hooks (`useJobs`, `useCompanies`, `useNotes`, etc.) wrap every API call. Automatic retry on 401 triggers the refresh flow before re-fetching.
+- **Radix UI** — accessible, unstyled component primitives (dialogs, dropdowns, selects, etc.)
+- **Tailwind CSS v4** — utility-first styling
+
+### Testing
+- **Vitest** — integration tests that run against a real MongoDB instance. The database is dropped on each test run to ensure a clean state.
+
+### Infrastructure
+- **Docker** — each service (`backend`, `frontend`) has its own multi-stage `Dockerfile`
+- **Docker Compose** — orchestrates the full stack (backend, frontend, MongoDB) for both local development and production
+- **DigitalOcean** — deployed on a droplet running the containerized stack
 
 ## Prerequisites
 
@@ -42,14 +66,5 @@ docker compose up --build
 
 ## Repository layout
 
-- `backend/` — Bun + TypeScript API server, database layer, migrations
-- `frontend/` — Vite + React app using ShadeCDN components
-- `PLAN.md` — high-level roadmap and development plan
-- `.gitignore`, `README.md`
-
-## Next steps
-
-- Scaffold `backend/` and `frontend/` directories with starter `package.json`, `tsconfig.json`, and `Dockerfile`s.
-- Implement authentication, basic Jobs CRUD, and a simple React list/detail UI.
-
-If you'd like, I can scaffold the monorepo now (create `backend/` and `frontend/` skeletons and Dockerfiles). Reply with **"scaffold monorepo"** to start.
+- `backend/` — Bun + TypeScript API server, database layer, auth, and routes
+- `frontend/` — Vite + React app with Radix UI components
