@@ -49,6 +49,21 @@ export interface Note {
   updatedAt?: string
 }
 
+export interface JobFilters {
+  page: number
+  limit: number
+  search: string
+  status: string
+}
+
+export interface PaginatedJobs {
+  data: Job[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 export interface ApiError {
   status: number
   message: string

@@ -5,16 +5,38 @@ import { normalizeArray, normalizeDoc } from '../utils/dto';
 
 const jobsRouter = new Hono();
 
-// List jobs (owned by auth user or query param)
+// List jobs (paginated)
 jobsRouter.get('/', async c => {
-    const queryUserId = c.req.query('userId');
     const authUser = c.get('user') as any;
     const col = await getCollection('jobs');
+
+    const page  = Math.max(1, parseInt(c.req.query('page')  ?? '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') ?? '10', 10)));
+    const search = (c.req.query('search') ?? '').trim();
+    const status = c.req.query('status') ?? '';
+
     const filter: any = {};
     if (authUser?.id) filter.userId = getObjectId(authUser.id);
-    else if (queryUserId) filter.userId = getObjectId(queryUserId as string);
-    const docs = await col.find(filter).toArray();
-    return c.json(normalizeArray(docs));
+
+    if (status) filter.status = status;
+    if (search) filter.title = { $regex: search, $options: 'i' };
+
+    const [total, docs] = await Promise.all([
+        col.countDocuments(filter),
+        col.find(filter)
+            .sort({ dateApplied: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .toArray(),
+    ]);
+
+    return c.json({
+        data: normalizeArray(docs),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+    });
 });
 
 // Create job

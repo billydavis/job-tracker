@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Pencil, X } from 'lucide-react'
-import type { Job, JobStatus } from '../types'
+import type { Job, JobFilters, JobStatus } from '../types'
 import { useJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation } from '../hooks/useJobs'
 import { useCompaniesQuery } from '../hooks/useCompanies'
 import JobModal, { type JobFormData } from '../components/JobModal'
 import NotesPanel from '../components/NotesPanel'
+import Pagination from '../components/Pagination'
+import { DEFAULT_PAGE_SIZE } from '../api/client'
 
 const ALL_STATUSES: JobStatus[] = ['waiting','applied','interview','offer','negotiation','rejected','ghosted']
 
@@ -17,12 +19,6 @@ const STATUS_STYLES: Record<JobStatus, string> = {
   negotiation: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
   rejected: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   ghosted: 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
-}
-
-function getDateAppliedTimestamp(job: Job) {
-  if (!job.dateApplied) return Number.NEGATIVE_INFINITY
-  const timestamp = Date.parse(job.dateApplied)
-  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp
 }
 
 function formatAppliedDate(dateApplied?: string) {
@@ -37,16 +33,25 @@ function formatAppliedDate(dateApplied?: string) {
 }
 
 export default function Dashboard() {
-  const { data: jobs = [], isLoading: loading, error } = useJobsQuery()
-  const { data: companies = [] } = useCompaniesQuery()
-  const createJobMutation = useCreateJobMutation()
-  const updateJobMutation = useUpdateJobMutation()
-  const deleteJobMutation = useDeleteJobMutation()
-
   const [modalOpen, setModalOpen] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState<JobStatus | ''>('')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE)
+
+  useEffect(() => { setPage(1) }, [search, filterStatus])
+
+  const filters: JobFilters = { page, limit, search, status: filterStatus }
+  const { data, isLoading: loading, isFetching, error } = useJobsQuery(filters)
+  const jobs       = data?.data ?? []
+  const total      = data?.total ?? 0
+  const totalPages = data?.totalPages ?? 1
+
+  const { data: companies = [] } = useCompaniesQuery()
+  const createJobMutation = useCreateJobMutation()
+  const updateJobMutation = useUpdateJobMutation()
+  const deleteJobMutation = useDeleteJobMutation()
 
   async function handleModalSubmit(form: JobFormData) {
     const payload: Partial<Job> = {
@@ -86,18 +91,6 @@ export default function Dashboard() {
   const companyName = (companyId?: string) =>
     companies.find(c => c._id === companyId)?.name ?? companyId ?? '—'
 
-  const filtered = jobs
-    .filter(j => {
-      if (filterStatus && j.status !== filterStatus) return false
-      if (search) {
-        const q = search.toLowerCase()
-        const company = companyName(j.companyId).toLowerCase()
-        if (!j.title.toLowerCase().includes(q) && !company.includes(q)) return false
-      }
-      return true
-    })
-    .sort((left, right) => getDateAppliedTimestamp(right) - getDateAppliedTimestamp(left))
-
   return (
     <div>
       {/* Header */}
@@ -117,7 +110,7 @@ export default function Dashboard() {
           type="search"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search title or company…"
+          placeholder="Search title…"
           className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-52"
         />
         <select
@@ -129,6 +122,13 @@ export default function Dashboard() {
           {ALL_STATUSES.map(s => (
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
+        </select>
+        <select
+          value={limit}
+          onChange={e => { setLimit(Number(e.target.value)); setPage(1) }}
+          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {[10, 25, 50].map(n => <option key={n} value={n}>{n} per page</option>)}
         </select>
         {(filterStatus || search) && (
           <button
@@ -148,19 +148,20 @@ export default function Dashboard() {
       )}
 
       {!loading && !error && (
+        <div className={isFetching ? 'opacity-60 pointer-events-none' : ''}>
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
-          {filtered.length === 0 ? (
+          {jobs.length === 0 ? (
             <div className="px-6 py-14 text-center">
               <p className="font-medium text-gray-500 dark:text-gray-400">
-                {jobs.length === 0 ? 'No applications yet' : 'No jobs match your filters'}
+                {total === 0 && !search && !filterStatus ? 'No applications yet' : 'No jobs match your filters'}
               </p>
-              {jobs.length === 0 && (
+              {total === 0 && !search && !filterStatus && (
                 <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                   Click <strong>+ Add job</strong> to get started.
                 </p>
               )}
             </div>
-          ) : filtered.map(j => (
+          ) : jobs.map(j => (
             <div key={j._id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
               <div className="flex items-start justify-between gap-4">
                 {/* Left: title + company */}
@@ -235,6 +236,15 @@ export default function Dashboard() {
               </div>
             </div>
           ))}
+        </div>
+        {totalPages > 1 && (
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              Showing {Math.min((page - 1) * limit + 1, total)}–{Math.min(page * limit, total)} of {total}
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} disabled={isFetching} />
+          </div>
+        )}
         </div>
       )}
 

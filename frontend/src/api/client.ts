@@ -1,4 +1,4 @@
-import type { User, Job, Company, Note, ApiError } from '../types'
+import type { User, Job, Company, Note, ApiError, JobFilters, PaginatedJobs } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 
@@ -94,8 +94,13 @@ export function logout(): Promise<void> {
   return request('/api/auth/logout', { method: 'POST' }) as Promise<void>
 }
 
-export function getJobs(): Promise<Job[]> {
-  return request('/api/jobs') as Promise<Job[]>
+export const DEFAULT_PAGE_SIZE = 10
+
+export function getJobs(filters: JobFilters): Promise<PaginatedJobs> {
+  const params = new URLSearchParams({ page: String(filters.page), limit: String(filters.limit) })
+  if (filters.search) params.set('search', filters.search)
+  if (filters.status) params.set('status', filters.status)
+  return request(`/api/jobs?${params}`) as Promise<PaginatedJobs>
 }
 
 export function getJob(id: string): Promise<Job> {

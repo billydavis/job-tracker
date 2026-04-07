@@ -1,14 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createJob, deleteJob, getJob, getJobs, updateJob } from '../api/client'
-import type { Job } from '../types'
+import type { Job, JobFilters, PaginatedJobs } from '../types'
 
 export const jobsQueryKey = ['jobs'] as const
 
-export function useJobsQuery() {
-  return useQuery<Job[]>({
-    queryKey: jobsQueryKey,
-    queryFn: getJobs,
-    select: (data) => data ?? [],
+function jobsQueryKeyWithFilters(filters: JobFilters) {
+  return [...jobsQueryKey, filters] as const
+}
+
+export function useJobsQuery(filters: JobFilters) {
+  return useQuery<PaginatedJobs>({
+    queryKey: jobsQueryKeyWithFilters(filters),
+    queryFn: () => getJobs(filters),
+    placeholderData: keepPreviousData,
   })
 }
 
