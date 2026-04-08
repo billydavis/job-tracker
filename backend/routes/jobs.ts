@@ -5,6 +5,81 @@ import { normalizeArray, normalizeDoc } from '../utils/dto';
 
 const jobsRouter = new Hono();
 
+// Job stats (status/location distribution + weekly applied counts)
+jobsRouter.get('/stats', async c => {
+    const authUser = c.get('user') as any;
+    if (!authUser?.id) return c.json({ error: 'Unauthorized' }, 401);
+
+    const col = await getCollection('jobs');
+    const userId = getObjectId(authUser.id);
+
+    const rawOffset = parseInt(c.req.query('weekOffset') ?? '0', 10);
+    const offset = isNaN(rawOffset) ? 0 : rawOffset;
+
+    const now = new Date();
+    const dayOfWeek = now.getUTCDay(); // 0=Sun
+    const weekStart = new Date(now);
+    weekStart.setUTCDate(now.getUTCDate() - dayOfWeek + offset * 7);
+    weekStart.setUTCHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+    weekEnd.setUTCHours(23, 59, 59, 999);
+
+    const prevWeekStart = new Date(weekStart);
+    prevWeekStart.setUTCDate(weekStart.getUTCDate() - 7);
+    const prevWeekEnd = new Date(weekEnd);
+    prevWeekEnd.setUTCDate(weekEnd.getUTCDate() - 7);
+
+    const weekStartStr = weekStart.toISOString().slice(0, 10);
+    const weekEndStr = weekEnd.toISOString().slice(0, 10);
+    const prevWeekStartStr = prevWeekStart.toISOString().slice(0, 10);
+    const prevWeekEndStr = prevWeekEnd.toISOString().slice(0, 10);
+
+    const [statusAgg, locationAgg, weekCount, prevWeekCount, recentAgg] = await Promise.all([
+        col.aggregate([
+            { $match: { userId } },
+            { $group: { _id: '$status', count: { $sum: 1 } } },
+        ]).toArray(),
+        col.aggregate([
+            { $match: { userId, location: { $exists: true, $ne: null } } },
+            { $group: { _id: '$location', count: { $sum: 1 } } },
+        ]).toArray(),
+        col.countDocuments({ userId, dateApplied: { $gte: weekStartStr, $lte: weekEndStr } } as any),
+        col.countDocuments({ userId, dateApplied: { $gte: prevWeekStartStr, $lte: prevWeekEndStr } } as any),
+        col.aggregate([
+            { $match: { userId } },
+            { $sort: { dateApplied: -1, createdAt: -1 } },
+            { $limit: 5 },
+            { $lookup: { from: 'companies', localField: 'companyId', foreignField: '_id', as: 'company' } },
+            { $unwind: { path: '$company', preserveNullAndEmptyArrays: true } },
+            { $project: { _id: 1, title: 1, dateApplied: 1, status: 1, companyName: { $ifNull: ['$company.name', null] } } },
+        ]).toArray(),
+    ]);
+
+    console.log('[stats] recentAgg count:', recentAgg.length, JSON.stringify(recentAgg, null, 2));
+
+    return c.json({
+        statusCounts: statusAgg.map(d => ({ status: d._id as string, count: d.count as number })),
+        locationCounts: locationAgg.map(d => ({ location: d._id as string, count: d.count as number })),
+        weeklyApplied: {
+            weekOffset: offset,
+            weekStart: weekStartStr,
+            weekEnd: weekEndStr,
+            count: weekCount,
+            previousCount: prevWeekCount,
+            previousWeekStart: prevWeekStartStr,
+            previousWeekEnd: prevWeekEndStr,
+        },
+        recentApplications: recentAgg.map(d => ({
+            jobId: String(d._id),
+            title: d.title as string,
+            companyName: d.companyName as string | null,
+            dateApplied: d.dateApplied as string,
+            status: d.status as string,
+        })),
+    });
+});
+
 // List jobs (paginated)
 jobsRouter.get('/', async c => {
     const authUser = c.get('user') as any;

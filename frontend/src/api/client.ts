@@ -1,4 +1,4 @@
-import type { User, Job, Company, Note, ApiError, JobFilters, PaginatedJobs } from '../types'
+import type { User, Job, Company, Note, ApiError, JobFilters, PaginatedJobs, JobStats } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 
@@ -127,6 +127,11 @@ export function deleteJob(id: string): Promise<void> {
   }) as Promise<void>
 }
 
+export function getJobStats(weekOffset: number): Promise<JobStats> {
+  const params = new URLSearchParams({ weekOffset: String(weekOffset) })
+  return request(`/api/jobs/stats?${params}`) as Promise<JobStats>
+}
+
 // ── Companies ─────────────────────────────────────────────────────────────────
 
 export function getCompanies(): Promise<Company[]> {
@@ -181,7 +186,7 @@ export function deleteNote(id: string): Promise<void> {
 
 export default {
   login, register, me, logout,
-  getJobs, getJob, createJob, updateJob, deleteJob,
+  getJobs, getJob, createJob, updateJob, deleteJob, getJobStats,
   getCompanies, getCompany, createCompany, updateCompany, deleteCompany,
   getNotes, createNote, updateNote, deleteNote,
 }

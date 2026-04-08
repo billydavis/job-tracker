@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Job, JobStatus, JobLocation, Company } from '../types'
 import { useCreateCompanyMutation } from '../hooks/useCompanies'
 
@@ -66,6 +66,175 @@ function jobToForm(job: Job): JobFormData {
 
 const NEW_COMPANY_SENTINEL = '__new__'
 
+// ---------------------------------------------------------------------------
+// CompanyCombobox
+// ---------------------------------------------------------------------------
+
+interface CompanyComboboxProps {
+  companies: Company[]
+  selectedId: string        // '' | '__new__' | actual company _id
+  newCompanyName: string    // only relevant when selectedId === '__new__'
+  onSelectExisting: (id: string) => void
+  onCreateNew: (name: string) => void
+  onClear: () => void
+}
+
+function CompanyCombobox({
+  companies,
+  selectedId,
+  newCompanyName,
+  onSelectExisting,
+  onCreateNew,
+  onClear,
+}: CompanyComboboxProps) {
+  const isCreating = selectedId === NEW_COMPANY_SENTINEL
+  const selectedCompany = companies.find(c => c._id === selectedId)
+
+  const [inputValue, setInputValue] = useState(() => {
+    if (isCreating) return newCompanyName
+    if (selectedCompany) return selectedCompany.name
+    return ''
+  })
+  const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+
+  const listRef = useRef<HTMLUListElement>(null)
+
+  // Sync input display when parent state resets (e.g. job prop changes)
+  useEffect(() => {
+    if (isCreating) setInputValue(newCompanyName)
+    else if (selectedCompany) setInputValue(selectedCompany.name)
+    else setInputValue('')
+  }, [selectedId, newCompanyName]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filtered = companies
+    .filter(c => c.name.toLowerCase().includes(inputValue.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const exactMatch = companies.find(
+    c => c.name.toLowerCase() === inputValue.trim().toLowerCase(),
+  )
+
+  const showCreate = inputValue.trim().length > 0 && !exactMatch
+
+  function selectCompany(c: Company) {
+    setInputValue(c.name)
+    setIsOpen(false)
+    setActiveIndex(-1)
+    onSelectExisting(c._id!)
+  }
+
+  function selectCreate() {
+    const name = inputValue.trim()
+    setIsOpen(false)
+    setActiveIndex(-1)
+    onCreateNew(name)
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setInputValue(e.target.value)
+    setIsOpen(true)
+    setActiveIndex(-1)
+    if (!e.target.value.trim()) onClear()
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    const total = filtered.length + (showCreate ? 1 : 0)
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (!isOpen) { setIsOpen(true); return }
+      setActiveIndex(i => Math.min(i + 1, total - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(i => Math.max(i - 1, -1))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (!isOpen || activeIndex === -1) return
+      if (activeIndex < filtered.length) selectCompany(filtered[activeIndex])
+      else selectCreate()
+    } else if (e.key === 'Escape') {
+      setIsOpen(false)
+    }
+  }
+
+  function handleBlur(e: React.FocusEvent) {
+    if (listRef.current?.contains(e.relatedTarget as Node)) return
+    setIsOpen(false)
+    setActiveIndex(-1)
+
+    const trimmed = inputValue.trim()
+    if (!trimmed) { onClear(); return }
+
+    // Auto-select if the typed text exactly matches an existing company
+    const exact = companies.find(c => c.name.toLowerCase() === trimmed.toLowerCase())
+    if (exact) { setInputValue(exact.name); onSelectExisting(exact._id!); return }
+
+    // If already in "create" mode, keep it
+    if (isCreating) return
+
+    // Revert to previously selected company name or clear
+    if (selectedCompany) setInputValue(selectedCompany.name)
+    else setInputValue('')
+  }
+
+  const dropdownVisible = isOpen && (filtered.length > 0 || showCreate)
+
+  return (
+    <div className="relative">
+      <input
+        className={inputCls}
+        value={inputValue}
+        onChange={handleChange}
+        onFocus={() => setIsOpen(true)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder="Search or create company…"
+        autoComplete="off"
+        aria-autocomplete="list"
+        aria-expanded={dropdownVisible}
+      />
+      {dropdownVisible && (
+        <ul
+          ref={listRef}
+          className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+        >
+          {filtered.map((c, i) => (
+            <li
+              key={c._id}
+              onMouseDown={e => { e.preventDefault(); selectCompany(c) }}
+              className={
+                'px-3 py-2 text-sm cursor-pointer text-gray-900 dark:text-white ' +
+                (activeIndex === i
+                  ? 'bg-blue-50 dark:bg-blue-900/30'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-600')
+              }
+            >
+              {c.name}
+            </li>
+          ))}
+          {showCreate && (
+            <li
+              onMouseDown={e => { e.preventDefault(); selectCreate() }}
+              className={
+                'px-3 py-2 text-sm cursor-pointer font-medium text-blue-600 dark:text-blue-400 ' +
+                (activeIndex === filtered.length
+                  ? 'bg-blue-50 dark:bg-blue-900/30'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-600')
+              }
+            >
+              Create &ldquo;{inputValue.trim()}&rdquo;
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// JobModal
+// ---------------------------------------------------------------------------
+
 export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
   const [form, setForm] = useState<JobFormData>(() => job ? jobToForm(job) : blankForm())
   const [submitting, setSubmitting] = useState(false)
@@ -73,7 +242,7 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
   const [newCompanyName, setNewCompanyName] = useState('')
   const createCompanyMutation = useCreateCompanyMutation()
 
-  const addingNewCompany = form.companyId === NEW_COMPANY_SENTINEL
+  const isCreatingCompany = form.companyId === NEW_COMPANY_SENTINEL
 
   // Reset form when job prop changes (e.g. switching between edit targets)
   useEffect(() => {
@@ -89,10 +258,16 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (!form.companyId) {
+      setError('Please select or create a company')
+      return
+    }
+
     setSubmitting(true)
     try {
       let resolvedForm = form
-      if (addingNewCompany) {
+      if (isCreatingCompany) {
         const trimmed = newCompanyName.trim()
         if (!trimmed) { setError('Please enter a company name'); setSubmitting(false); return }
         const created = await createCompanyMutation.mutateAsync({ name: trimmed })
@@ -129,6 +304,19 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
+          {/* Company — first field */}
+          <div>
+            <label className={labelCls}>Company *</label>
+            <CompanyCombobox
+              companies={companies}
+              selectedId={form.companyId}
+              newCompanyName={newCompanyName}
+              onSelectExisting={id => { set('companyId', id); setNewCompanyName('') }}
+              onCreateNew={name => { set('companyId', NEW_COMPANY_SENTINEL); setNewCompanyName(name) }}
+              onClear={() => { set('companyId', ''); setNewCompanyName('') }}
+            />
+          </div>
+
           {/* Title */}
           <div>
             <label className={labelCls}>Job title *</label>
@@ -139,36 +327,6 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
               placeholder="Software Engineer"
               required
             />
-          </div>
-
-          {/* Company */}
-          <div>
-            <label className={labelCls}>Company *</label>
-            <select
-              className={inputCls}
-              value={form.companyId}
-              onChange={e => {
-                set('companyId', e.target.value)
-                if (e.target.value !== NEW_COMPANY_SENTINEL) setNewCompanyName('')
-              }}
-              required={!addingNewCompany}
-            >
-              <option value="">Select a company…</option>
-              {companies.map(c => (
-                <option key={c._id} value={c._id}>{c.name}</option>
-              ))}
-              <option value={NEW_COMPANY_SENTINEL}>＋ Add new company…</option>
-            </select>
-            {addingNewCompany && (
-              <input
-                className={inputCls + ' mt-2'}
-                value={newCompanyName}
-                onChange={e => setNewCompanyName(e.target.value)}
-                placeholder="Company name"
-                autoFocus
-                required
-              />
-            )}
           </div>
 
           {/* Status + Location */}
@@ -249,7 +407,7 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
 
           {/* Description */}
           <div>
-            <label className={labelCls}>Notes / description</label>
+            <label className={labelCls}>Job Description</label>
             <textarea
               className={inputCls + ' resize-none'}
               rows={3}

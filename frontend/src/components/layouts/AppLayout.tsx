@@ -1,5 +1,5 @@
 import { type Dispatch, type SetStateAction } from 'react'
-import { Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useMeQuery, useLogoutMutation } from '../../hooks/useAuth'
 
 interface Props {
@@ -17,9 +17,29 @@ export default function AppLayout({ theme, setTheme }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-6 py-3 flex items-center justify-between">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-6 py-3 flex items-center">
         <span className="font-semibold text-gray-900 dark:text-white text-lg tracking-tight">Job Tracker</span>
-        <div className="flex items-center gap-3">
+        <nav className="flex items-center gap-1 ml-6">
+          {[
+            { to: '/dashboard', label: 'Jobs' },
+            { to: '/analytics', label: 'Analytics' },
+          ].map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 dark:bg-gray-700 font-medium text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="flex items-center gap-3 ml-auto">
           {user && (
             <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
               {user.name || user.email}

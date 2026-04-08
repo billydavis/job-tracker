@@ -28,6 +28,12 @@ companiesRouter.post('/', async c => {
   const parsed = createCompanySchema.safeParse(body);
   if (!parsed.success) return c.json({ errors: parsed.error.format() }, 400);
   const col = await getCollection('companies');
+  const escapedName = parsed.data.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const duplicate = await col.findOne({
+    userId: getObjectId(authUser.id),
+    name: { $regex: `^${escapedName}$`, $options: 'i' },
+  } as any)
+  if (duplicate) return c.json({ error: 'A company with that name already exists' }, 409)
   const now = new Date().toISOString();
   const doc = {
     userId: getObjectId(authUser.id),

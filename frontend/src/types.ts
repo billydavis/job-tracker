@@ -70,3 +70,24 @@ export interface ApiError {
   error?: string
   [key: string]: unknown
 }
+
+export interface JobStats {
+  statusCounts: Array<{ status: string; count: number }>
+  locationCounts: Array<{ location: string; count: number }>
+  weeklyApplied: {
+    weekOffset: number
+    weekStart: string
+    weekEnd: string
+    count: number
+    previousCount: number
+    previousWeekStart: string
+    previousWeekEnd: string
+  }
+  recentApplications: Array<{
+    jobId: string
+    title: string
+    companyName: string | null
+    dateApplied: string
+    status: string
+  }>
+}
