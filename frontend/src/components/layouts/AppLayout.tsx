@@ -1,15 +1,28 @@
 import { type Dispatch, type SetStateAction } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Menu, User } from 'lucide-react'
 import { useMeQuery, useLogoutMutation } from '../../hooks/useAuth'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 
 interface Props {
   theme: 'light' | 'dark'
   setTheme: Dispatch<SetStateAction<'light' | 'dark'>>
 }
 
+const triggerClass = 'p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer'
+
 export default function AppLayout({ theme, setTheme }: Props) {
   const { data: user } = useMeQuery()
   const logoutMutation = useLogoutMutation()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   async function handleLogout() {
     try { await logoutMutation.mutateAsync() } catch { /* cache cleared in onSettled */ }
@@ -17,49 +30,49 @@ export default function AppLayout({ theme, setTheme }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-6 py-3 flex items-center">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-6 py-3 flex items-center gap-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger className={triggerClass} aria-label="Navigation menu">
+            <Menu className="size-5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              onClick={() => navigate('/dashboard')}
+              className={location.pathname === '/dashboard' ? 'font-medium text-gray-900 dark:text-white' : ''}
+            >
+              Jobs
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigate('/analytics')}
+              className={location.pathname === '/analytics' ? 'font-medium text-gray-900 dark:text-white' : ''}
+            >
+              Analytics
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <span className="font-semibold text-gray-900 dark:text-white text-lg tracking-tight">Job Tracker</span>
-        <nav className="flex items-center gap-1 ml-6">
-          {[
-            { to: '/dashboard', label: 'Jobs' },
-            { to: '/analytics', label: 'Analytics' },
-          ].map(({ to, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gray-100 dark:bg-gray-700 font-medium text-gray-900 dark:text-white'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="flex items-center gap-3 ml-auto">
-          {user && (
-            <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-              {user.name || user.email}
-            </span>
-          )}
-          {user && (
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
-          )}
-          <button
-            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-          </button>
+
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger className={triggerClass} aria-label="User menu">
+              <User className="size-5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {user && (
+                <DropdownMenuLabel>{user.name || user.email}</DropdownMenuLabel>
+              )}
+              {user && <DropdownMenuSeparator />}
+              <DropdownMenuItem onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
+                {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+              </DropdownMenuItem>
+              {user && (
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-10">
