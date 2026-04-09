@@ -5,7 +5,8 @@ import { useCompaniesQuery } from '../hooks/useCompanies'
 import { useJobQuery, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
 import { useNotesQuery } from '../hooks/useNotes'
 import NotesPanel from '../components/NotesPanel'
-import type { JobStatus } from '../types'
+import { DEFAULT_PAGE_SIZE } from '../api/client'
+import type { JobFilters, JobStatus } from '../types'
 
 const STATUS_STYLES: Record<JobStatus, string> = {
   waiting: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
@@ -39,13 +40,21 @@ type TimelineItem = {
   detail: string
 }
 
+const jobDetailsFilters: JobFilters = {
+  page: 1,
+  limit: DEFAULT_PAGE_SIZE,
+  search: '',
+  status: '',
+}
+
 export default function JobDetails() {
   const navigate = useNavigate()
   const params = useParams<{ id: string }>()
   const id = params.id ?? ''
 
   const { data: job, isLoading, error } = useJobQuery(id)
-  const { data: jobs = [] } = useJobsQuery()
+  const { data: jobsResponse } = useJobsQuery(jobDetailsFilters)
+  const jobs = jobsResponse?.data ?? []
   const { data: companies = [] } = useCompaniesQuery()
   const { data: notes = [] } = useNotesQuery(id)
   const updateJobMutation = useUpdateJobMutation()

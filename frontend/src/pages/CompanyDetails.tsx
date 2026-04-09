@@ -2,7 +2,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import MDEditor from '@uiw/react-md-editor'
 import { useCompanyQuery } from '../hooks/useCompanies'
 import { useJobsQuery } from '../hooks/useJobs'
-import type { Job } from '../types'
+import { DEFAULT_PAGE_SIZE } from '../api/client'
+import type { Job, JobFilters } from '../types'
+
+const companyJobsFilters: JobFilters = {
+  page: 1,
+  limit: DEFAULT_PAGE_SIZE,
+  search: '',
+  status: '',
+}
 
 function formatDate(value?: string) {
   if (!value) return 'Not set'
@@ -25,7 +33,8 @@ export default function CompanyDetails() {
   const id = params.id ?? ''
 
   const { data: company, isLoading: companyLoading, error: companyError } = useCompanyQuery(id)
-  const { data: jobs = [], isLoading: jobsLoading } = useJobsQuery()
+  const { data: jobsResponse, isLoading: jobsLoading } = useJobsQuery(companyJobsFilters)
+  const jobs = jobsResponse?.data ?? []
 
   const companyJobs = jobs
     .filter((job) => job.companyId === id)

@@ -1,11 +1,11 @@
-# Stage 1: Build the React frontend with Node for Vite stability in Docker
-FROM node:20-alpine AS frontend-builder
+# Stage 1: Build the React frontend
+FROM oven/bun:1 AS frontend-builder
 WORKDIR /app/frontend
-COPY frontend/package.json ./package.json
-RUN npm install
+COPY frontend/package.json frontend/bun.lock* ./
+RUN bun install --frozen-lockfile
 COPY frontend/ .
 COPY tsconfig.base.json ../tsconfig.base.json
-RUN npm run build
+RUN bun run build
 
 # Stage 2: Backend runtime
 FROM oven/bun:1 AS runner
