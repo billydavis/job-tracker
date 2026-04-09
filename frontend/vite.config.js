@@ -10,6 +10,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    minify: false, // Disable minification to see if that's the issue
+    cssMinify: false,
+    reportCompressedSize: false,
+  },
   server: {
     // Vite will pick the next free port if this one is in use.
     // Set to 5174 to match the currently running dev server.

@@ -5,7 +5,7 @@ COPY frontend/package.json frontend/bun.lock* ./
 RUN bun install --frozen-lockfile
 COPY frontend/ .
 COPY tsconfig.base.json ../tsconfig.base.json
-RUN bun run build
+RUN bun run build 2>&1
 
 # Stage 2: Backend runtime
 FROM oven/bun:1 AS runner
