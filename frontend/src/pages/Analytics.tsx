@@ -7,7 +7,8 @@ import RecentApplicationsWidget from '../components/analytics/RecentApplications
 
 export default function Analytics() {
   const [weekOffset, setWeekOffset] = useState(0)
-  const { data, isLoading, error } = useJobStatsQuery(weekOffset)
+  const { data: overallData, isLoading: overallLoading, error } = useJobStatsQuery(0)
+  const { data: weeklyData, isLoading: weeklyLoading } = useJobStatsQuery(weekOffset)
 
   if (error) {
     return (
@@ -21,12 +22,12 @@ export default function Analytics() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Analytics</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <RecentApplicationsWidget data={data?.recentApplications} isLoading={isLoading} />
-        <StatusDistributionChart data={data?.statusCounts} isLoading={isLoading} />
-        <LocationDistributionChart data={data?.locationCounts} isLoading={isLoading} />
+        <RecentApplicationsWidget data={overallData?.recentApplications} isLoading={overallLoading} />
+        <StatusDistributionChart data={overallData?.statusCounts} isLoading={overallLoading} />
+        <LocationDistributionChart data={overallData?.locationCounts} isLoading={overallLoading} />
         <WeeklyApplicationsWidget
-          data={data?.weeklyApplied}
-          isLoading={isLoading}
+          data={weeklyData?.weeklyApplied}
+          isLoading={weeklyLoading}
           weekOffset={weekOffset}
           onWeekChange={setWeekOffset}
         />

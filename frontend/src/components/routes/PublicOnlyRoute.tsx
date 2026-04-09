@@ -8,7 +8,7 @@ interface Props {
   children: ReactNode
 }
 
-export default function PublicOnlyRoute({ user, redirectTo = '/dashboard', children }: Props) {
+export default function PublicOnlyRoute({ user, redirectTo = '/analytics', children }: Props) {
   if (user) return <Navigate to={redirectTo} replace />
   return <>{children}</>
 }
