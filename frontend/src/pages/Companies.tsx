@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ExternalLink } from 'lucide-react'
-import Pagination from '../components/Pagination'
+import { ExternalLink, Search } from 'lucide-react'
+import ListPaginationBar from '../components/ListPaginationBar'
 import { useCompaniesListQuery } from '../hooks/useCompanies'
-import { DEFAULT_PAGE_SIZE } from '../api/client'
+import { getListPageSize, setListPageSize } from '../lib/listPageSize'
 import type { CompanyFilters } from '../types'
 
 export default function Companies() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE)
+  const [limit, setLimit] = useState(() => getListPageSize())
 
   useEffect(() => {
     setPage(1)
@@ -33,27 +33,19 @@ export default function Companies() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-wrap gap-2 mb-4">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search name or website…"
-          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-52"
-        />
-        <select
-          value={limit}
-          onChange={(e) => {
-            setLimit(Number(e.target.value))
-            setPage(1)
-          }}
-          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {[10, 25, 50].map((n) => (
-            <option key={n} value={n}>
-              {n} per page
-            </option>
-          ))}
-        </select>
+        <div className="relative min-w-52">
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            aria-hidden
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or website…"
+            className="w-full rounded-lg border border-gray-300 bg-white py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+          />
+        </div>
         {search && (
           <button
             type="button"
@@ -130,20 +122,19 @@ export default function Companies() {
               ))
             )}
           </div>
-          {totalPages > 1 && (
-            <div className="mt-4 flex flex-col items-center gap-2">
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Showing {Math.min((page - 1) * limit + 1, total)}–{Math.min(page * limit, total)} of{' '}
-                {total}
-              </p>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                disabled={isFetching}
-              />
-            </div>
-          )}
+          <ListPaginationBar
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(n) => {
+              setListPageSize(n)
+              setLimit(n)
+              setPage(1)
+            }}
+            disabled={isFetching}
+          />
         </div>
       )}
     </div>

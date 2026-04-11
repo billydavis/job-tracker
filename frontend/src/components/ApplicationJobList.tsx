@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Pencil, X } from 'lucide-react'
 import type { Company, Job, JobStatus } from '../types'
 import NotesPanel from './NotesPanel'
-import Pagination from './Pagination'
+import ListPaginationBar from './ListPaginationBar'
 import { ALL_STATUSES, STATUS_STYLES, formatAppliedDate } from '../lib/jobApplicationUi'
 
 export interface ApplicationJobListProps {
@@ -20,6 +20,8 @@ export interface ApplicationJobListProps {
   total: number
   limit: number
   onPageChange: (page: number) => void
+  /** Persisted list page size (Applications only). Omit on company detail (fixed limit). */
+  onLimitChange?: (limit: number) => void
   onStatusChange: (job: Job, status: JobStatus) => void
   onEdit: (job: Job) => void
   onDelete: (id: string) => void
@@ -42,6 +44,7 @@ export default function ApplicationJobList({
   total,
   limit,
   onPageChange,
+  onLimitChange,
   onStatusChange,
   onEdit,
   onDelete,
@@ -160,20 +163,15 @@ export default function ApplicationJobList({
               ))
             )}
           </div>
-          {totalPages > 1 && (
-            <div className="mt-4 flex flex-col items-center gap-2">
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Showing {Math.min((page - 1) * limit + 1, total)}–{Math.min(page * limit, total)} of{' '}
-                {total}
-              </p>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={onPageChange}
-                disabled={isFetching}
-              />
-            </div>
-          )}
+          <ListPaginationBar
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={onPageChange}
+            onLimitChange={onLimitChange}
+            disabled={isFetching}
+          />
         </div>
       )}
     </>
