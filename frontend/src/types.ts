@@ -39,6 +39,8 @@ export interface Company {
   website?: string
   description?: string
   createdAt?: string
+  /** Present on list responses when scoped to a user (auth). */
+  jobCount?: number
 }
 
 export interface Note {
@@ -54,6 +56,8 @@ export interface JobFilters {
   limit: number
   search: string
   status: string
+  /** When set, list is scoped to this company (server-side). */
+  companyId?: string
 }
 
 export interface PaginatedJobs {

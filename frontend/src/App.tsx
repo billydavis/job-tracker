@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
+import Jobs from './pages/Jobs'
 import JobDetails from './pages/JobDetails'
+import Companies from './pages/Companies'
 import CompanyDetails from './pages/CompanyDetails'
 import Analytics from './pages/Analytics'
 import ProtectedRoute from './components/routes/ProtectedRoute'
@@ -53,9 +54,11 @@ export default function App() {
         }
       >
         {/* user is guaranteed non-null inside ProtectedRoute */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/jobs" element={<Jobs />} />
+        <Route path="/dashboard" element={<Navigate to="/jobs" replace />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
+        <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:id" element={<CompanyDetails />} />
       </Route>
 

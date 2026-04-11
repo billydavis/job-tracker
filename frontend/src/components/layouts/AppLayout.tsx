@@ -37,16 +37,27 @@ export default function AppLayout({ theme, setTheme }: Props) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem
-              onClick={() => navigate('/dashboard')}
-              className={location.pathname === '/dashboard' ? 'font-medium text-gray-900 dark:text-white' : ''}
-            >
-              Jobs
-            </DropdownMenuItem>
-            <DropdownMenuItem
               onClick={() => navigate('/analytics')}
               className={location.pathname === '/analytics' ? 'font-medium text-gray-900 dark:text-white' : ''}
             >
               Analytics
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigate('/jobs')}
+              className={location.pathname === '/jobs' ? 'font-medium text-gray-900 dark:text-white' : ''}
+            >
+              Applications
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigate('/companies')}
+              className={
+                location.pathname === '/companies' ||
+                location.pathname.startsWith('/companies/')
+                  ? 'font-medium text-gray-900 dark:text-white'
+                  : ''
+              }
+            >
+              Companies
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

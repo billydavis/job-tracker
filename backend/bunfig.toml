@@ -1,0 +1,4 @@
+# Ensures `bun test` (Bun's runner) loads test DB isolation — same as Vitest setupFiles.
+# Without this, integration tests used the default DB name (e.g. job-tracker from .env).
+[test]
+preload = ["./test/setup.ts"]

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { ObjectId } from 'mongodb';
 import { getCollection, getObjectId } from '../db';
 import { createJobSchema, updateJobSchema } from '../validators/jobs';
 import { normalizeArray, normalizeDoc } from '../utils/dto';
@@ -89,12 +90,17 @@ jobsRouter.get('/', async c => {
     const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') ?? '10', 10)));
     const search = (c.req.query('search') ?? '').trim();
     const status = c.req.query('status') ?? '';
+    const companyId = (c.req.query('companyId') ?? '').trim();
 
     const filter: any = {};
     if (authUser?.id) filter.userId = getObjectId(authUser.id);
 
     if (status) filter.status = status;
     if (search) filter.title = { $regex: search, $options: 'i' };
+    if (companyId) {
+        if (!ObjectId.isValid(companyId)) return c.json({ error: 'Invalid companyId' }, 400);
+        filter.companyId = getObjectId(companyId);
+    }
 
     const [total, docs] = await Promise.all([
         col.countDocuments(filter),

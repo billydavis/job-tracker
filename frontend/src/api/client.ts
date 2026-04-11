@@ -100,6 +100,7 @@ export function getJobs(filters: JobFilters): Promise<PaginatedJobs> {
   const params = new URLSearchParams({ page: String(filters.page), limit: String(filters.limit) })
   if (filters.search) params.set('search', filters.search)
   if (filters.status) params.set('status', filters.status)
+  if (filters.companyId) params.set('companyId', filters.companyId)
   return request(`/api/jobs?${params}`) as Promise<PaginatedJobs>
 }
 

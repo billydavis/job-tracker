@@ -172,10 +172,10 @@ export default function JobDetails() {
       <div className="space-y-3">
         <p className="text-sm text-red-600 dark:text-red-400">Could not load this job.</p>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/jobs')}
           className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
-          Back to dashboard
+          Back to applications
         </button>
       </div>
     )
@@ -187,10 +187,10 @@ export default function JobDetails() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/jobs')}
               className="mb-3 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              ← Back to dashboard
+              ← Back to applications
             </button>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{job.title}</h1>
             {job.companyId ? (

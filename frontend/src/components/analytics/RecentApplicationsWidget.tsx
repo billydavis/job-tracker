@@ -20,10 +20,10 @@ export default function RecentApplicationsWidget({ data, isLoading }: Props) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-base text-gray-900 dark:text-white">Recent Applications</h2>
         <Link
-          to="/dashboard"
+          to="/jobs"
           className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
         >
-          View all jobs <ArrowRight className="w-3.5 h-3.5" />
+          View all applications <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
       <div>
@@ -43,7 +43,7 @@ export default function RecentApplicationsWidget({ data, isLoading }: Props) {
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <p className="text-gray-500 dark:text-gray-400 text-sm">No applications yet.</p>
             <Link
-              to="/dashboard"
+              to="/jobs"
               className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               Add job application

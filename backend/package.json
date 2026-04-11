@@ -9,7 +9,9 @@
     "vitest": "^4.0.18"
   },
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "test:bun": "bun test",
+    "seed": "bun ./seed.ts"
   },
   "peerDependencies": {
     "typescript": "^5"

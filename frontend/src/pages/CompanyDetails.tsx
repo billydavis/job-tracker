@@ -1,16 +1,15 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import MDEditor from '@uiw/react-md-editor'
-import { useCompanyQuery } from '../hooks/useCompanies'
-import { useJobsQuery } from '../hooks/useJobs'
-import { DEFAULT_PAGE_SIZE } from '../api/client'
-import type { Job, JobFilters } from '../types'
+import ApplicationJobList from '../components/ApplicationJobList'
+import JobModal, { type JobFormData } from '../components/JobModal'
+import { companiesQueryKey, useCompaniesQuery, useCompanyQuery } from '../hooks/useCompanies'
+import { useDeleteJobMutation, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
+import type { Job, JobFilters, JobStatus } from '../types'
 
-const companyJobsFilters: JobFilters = {
-  page: 1,
-  limit: DEFAULT_PAGE_SIZE,
-  search: '',
-  status: '',
-}
+/** API max per page; company detail loads all applications for this company in one request when ≤100. */
+const COMPANY_JOBS_LIMIT = 100
 
 function formatDate(value?: string) {
   if (!value) return 'Not set'
@@ -29,16 +28,91 @@ function dateAppliedSort(left: Job, right: Job) {
 
 export default function CompanyDetails() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const params = useParams<{ id: string }>()
   const id = params.id ?? ''
+  const [jobPage, setJobPage] = useState(1)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingJob, setEditingJob] = useState<Job | undefined>(undefined)
+
+  useEffect(() => {
+    setJobPage(1)
+  }, [id])
 
   const { data: company, isLoading: companyLoading, error: companyError } = useCompanyQuery(id)
-  const { data: jobsResponse, isLoading: jobsLoading } = useJobsQuery(companyJobsFilters)
-  const jobs = jobsResponse?.data ?? []
+  const { data: companies = [] } = useCompaniesQuery()
 
-  const companyJobs = jobs
-    .filter((job) => job.companyId === id)
-    .sort(dateAppliedSort)
+  const jobsFilters: JobFilters = useMemo(
+    () => ({
+      page: jobPage,
+      limit: COMPANY_JOBS_LIMIT,
+      search: '',
+      status: '',
+      companyId: id,
+    }),
+    [id, jobPage],
+  )
+
+  const { data: jobsResponse, isLoading: jobsListLoading, isFetching: jobsFetching, error: jobsError } = useJobsQuery(jobsFilters, {
+    enabled: Boolean(id),
+  })
+
+  const updateJobMutation = useUpdateJobMutation()
+  const deleteJobMutation = useDeleteJobMutation()
+
+  function invalidateCompanyJobs() {
+    queryClient.invalidateQueries({ queryKey: [...companiesQueryKey, id] })
+  }
+
+  const companyJobs = useMemo(() => {
+    const rows = (jobsResponse?.data ?? []).filter((job) => job.companyId === id)
+    return [...rows].sort(dateAppliedSort)
+  }, [jobsResponse?.data, id])
+
+  const applicationTotal =
+    company?.jobCount !== undefined
+      ? company.jobCount
+      : jobsResponse?.total ?? companyJobs.length
+
+  const total = jobsResponse?.total ?? 0
+  const totalPages = jobsResponse?.totalPages ?? 1
+
+  async function handleModalSubmit(form: JobFormData) {
+    const payload: Partial<Job> = {
+      title: form.title,
+      companyId: form.companyId || undefined,
+      status: form.status,
+      location: form.location || undefined,
+      salary: form.salary ? Number(form.salary) : undefined,
+      url: form.url || undefined,
+      dateApplied: form.dateApplied || undefined,
+      description: form.description || undefined,
+      contact: form.contact || undefined,
+    }
+    if (editingJob?._id) {
+      await updateJobMutation.mutateAsync({ id: editingJob._id, payload })
+      invalidateCompanyJobs()
+    }
+    setModalOpen(false)
+    setEditingJob(undefined)
+  }
+
+  function openEdit(j: Job) {
+    setEditingJob(j)
+    setModalOpen(true)
+  }
+
+  async function handleDelete(jobId: string) {
+    if (!confirm('Delete this job?')) return
+    await deleteJobMutation.mutateAsync(jobId)
+    invalidateCompanyJobs()
+  }
+
+  async function handleStatusChange(j: Job, status: JobStatus) {
+    if (!j._id) return
+    await updateJobMutation.mutateAsync({ id: j._id, payload: { status } })
+    invalidateCompanyJobs()
+  }
 
   if (companyLoading) {
     return <div className="text-gray-400 dark:text-gray-500">Loading company…</div>
@@ -49,10 +123,11 @@ export default function CompanyDetails() {
       <div className="space-y-3">
         <p className="text-sm text-red-600 dark:text-red-400">Could not load this company.</p>
         <button
-          onClick={() => navigate('/dashboard')}
+          type="button"
+          onClick={() => navigate('/jobs')}
           className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
-          Back to dashboard
+          Back to applications
         </button>
       </div>
     )
@@ -61,18 +136,29 @@ export default function CompanyDetails() {
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-3 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-        >
-          ← Back
-        </button>
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            ← Back
+          </button>
+          <Link
+            to="/companies"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            All companies
+          </Link>
+        </div>
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{company.name}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {companyJobs.length} job{companyJobs.length === 1 ? '' : 's'} tracked
+              {company.jobCount === undefined && jobsListLoading && !jobsResponse
+                ? 'Loading applications…'
+                : `${applicationTotal} application${applicationTotal === 1 ? '' : 's'} tracked`}
             </p>
           </div>
           {company.website && (
@@ -97,40 +183,52 @@ export default function CompanyDetails() {
             <p className="text-gray-900 dark:text-white mt-0.5">{formatDate(company.createdAt)}</p>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Company Notes</h2>
-          <div data-color-mode="light" className="min-h-28">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Description</p>
+          <div
+            data-color-mode="light"
+            className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2"
+          >
             {company.description ? (
               <MDEditor.Markdown source={company.description} className="bg-transparent! text-sm text-slate-800 dark:text-slate-200 **:text-slate-800 dark:**:text-slate-200" />
             ) : (
-              <p className="text-sm text-gray-600 dark:text-gray-300">No company description yet.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No description yet.</p>
             )}
           </div>
         </div>
-
-        <div className="md:col-span-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Applied Jobs</h2>
-          {jobsLoading ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Loading jobs…</p>
-          ) : companyJobs.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No jobs for this company yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {companyJobs.map(job => (
-                <li key={job._id} className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-                  <Link to={`/jobs/${job._id}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {job.title}
-                  </Link>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Applied {formatDate(job.dateApplied)}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
+
+      <div className="min-w-0">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Applications</h2>
+        <ApplicationJobList
+          jobs={companyJobs}
+          companies={companies}
+          loading={jobsListLoading}
+          error={jobsError as { error?: string; message?: string } | null}
+          isFetching={jobsFetching}
+          emptyMessage="No applications for this company yet."
+          page={jobsResponse?.page ?? jobPage}
+          totalPages={totalPages}
+          total={total}
+          limit={COMPANY_JOBS_LIMIT}
+          onPageChange={setJobPage}
+          onStatusChange={handleStatusChange}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          deletePending={deleteJobMutation.isPending}
+          companySubtitle={company.name}
+        />
+      </div>
+
+      {modalOpen && (
+        <JobModal
+          job={editingJob}
+          companies={companies}
+          onSubmit={handleModalSubmit}
+          onClose={() => { setModalOpen(false); setEditingJob(undefined) }}
+        />
+      )}
     </div>
   )
 }

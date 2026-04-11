@@ -8,11 +8,24 @@ function jobsQueryKeyWithFilters(filters: JobFilters) {
   return [...jobsQueryKey, filters] as const
 }
 
-export function useJobsQuery(filters: JobFilters) {
+function sameCompanyScope(prev: JobFilters | undefined, next: JobFilters): boolean {
+  const a = prev?.companyId ?? ''
+  const b = next.companyId ?? ''
+  return a === b
+}
+
+export function useJobsQuery(filters: JobFilters, options?: { enabled?: boolean }) {
   return useQuery<PaginatedJobs>({
     queryKey: jobsQueryKeyWithFilters(filters),
     queryFn: () => getJobs(filters),
-    placeholderData: keepPreviousData,
+    // Do not reuse e.g. the main applications list as placeholder for a company-scoped query
+    // (would show every company's jobs under one company header).
+    placeholderData: (previousData, previousQuery) => {
+      const prevFilters = previousQuery?.queryKey[1] as JobFilters | undefined
+      if (!sameCompanyScope(prevFilters, filters)) return undefined
+      return keepPreviousData(previousData)
+    },
+    enabled: options?.enabled ?? true,
   })
 }
 

@@ -1,9 +1,16 @@
 import { Hono } from 'hono';
+import { ObjectId } from 'mongodb';
 import { getCollection, getObjectId } from '../db';
 import { createCompanySchema, updateCompanySchema } from '../validators/companies';
 import { normalizeArray, normalizeDoc } from '../utils/dto';
 
 const companiesRouter = new Hono();
+
+function companyIdKey(id: unknown): string {
+  if (id == null) return '';
+  if (id instanceof ObjectId) return id.toString();
+  return String(id);
+}
 
 // List companies. Optional query param: ?userId=...
 companiesRouter.get('/', async c => {
@@ -11,13 +18,35 @@ companiesRouter.get('/', async c => {
   const authUser = c.get('user') as any;
   const col = await getCollection('companies');
   const filter: any = {};
+  let jobsUserId: ReturnType<typeof getObjectId> | null = null;
   if (authUser?.id) {
     filter.userId = getObjectId(authUser.id);
+    jobsUserId = getObjectId(authUser.id);
   } else if (queryUserId) {
     filter.userId = getObjectId(queryUserId as string);
+    jobsUserId = getObjectId(queryUserId as string);
   }
   const docs = await col.find(filter).toArray();
-  return c.json(normalizeArray(docs));
+  const normalized = normalizeArray(docs) as Array<Record<string, unknown> & { _id?: string; jobCount?: number }>;
+
+  if (jobsUserId) {
+    const jobCol = await getCollection('jobs');
+    const agg = await jobCol
+      .aggregate([
+        { $match: { userId: jobsUserId, companyId: { $exists: true, $ne: null } } },
+        { $group: { _id: '$companyId', count: { $sum: 1 } } },
+      ])
+      .toArray();
+    const countMap = new Map<string, number>();
+    for (const row of agg) {
+      countMap.set(companyIdKey(row._id), row.count as number);
+    }
+    for (const co of normalized) {
+      co.jobCount = countMap.get(co._id ?? '') ?? 0;
+    }
+  }
+
+  return c.json(normalized);
 });
 
 // Create company (expects body { name, userId, ... })
@@ -50,12 +79,23 @@ companiesRouter.post('/', async c => {
 // Get company by id
 companiesRouter.get('/:id', async c => {
   const id = c.req.param('id') as string;
+  if (!ObjectId.isValid(id)) return c.body(null, 404);
   const col = await getCollection('companies');
   const authUser = c.get('user') as any;
   const filter: any = { _id: getObjectId(id) };
   if (authUser?.id) filter.userId = getObjectId(authUser.id);
   const doc = await col.findOne(filter as any);
-  return doc ? c.json(normalizeDoc(doc)) : c.body(null, 404);
+  if (!doc) return c.body(null, 404);
+  const normalized = normalizeDoc(doc) as Record<string, unknown> & { jobCount?: number };
+  if (authUser?.id) {
+    const jobCol = await getCollection('jobs');
+    const n = await jobCol.countDocuments({
+      userId: getObjectId(authUser.id),
+      companyId: getObjectId(id),
+    } as any);
+    normalized.jobCount = n;
+  }
+  return c.json(normalized);
 });
 
 // Update company (partial)

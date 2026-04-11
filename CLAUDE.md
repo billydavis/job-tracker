@@ -8,8 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 bun install          # Install dependencies
 bun run index.ts     # Start dev server (port 4000)
-bun test             # Run all tests
-bun test -- <file>   # Run a single test file
+bun test             # Bun's test runner (uses backend/bunfig.toml → job-tracker-test DB)
+bun run test         # Vitest (same isolated DB via test/setup.ts)
+bun test path/to/file.test.ts   # Single file
 ```
 
 ### Frontend (`cd frontend`)
