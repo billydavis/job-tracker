@@ -12,7 +12,25 @@ function companyIdKey(id: unknown): string {
   return String(id);
 }
 
-// List companies. Optional query param: ?userId=...
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// All companies for the user (dropdowns / combobox). No job counts.
+companiesRouter.get('/select', async c => {
+  const authUser = c.get('user') as any;
+  if (!authUser?.id) return c.json({ error: 'Unauthorized' }, 401);
+  const col = await getCollection('companies');
+  const filter = { userId: getObjectId(authUser.id) } as any;
+  const docs = await col
+    .find(filter)
+    .sort({ name: 1 })
+    .collation({ locale: 'en', strength: 2 })
+    .toArray();
+  return c.json(normalizeArray(docs));
+});
+
+// List companies (paginated). Optional query param: ?userId=... when unauthenticated.
 companiesRouter.get('/', async c => {
   const queryUserId = c.req.query('userId');
   const authUser = c.get('user') as any;
@@ -26,7 +44,29 @@ companiesRouter.get('/', async c => {
     filter.userId = getObjectId(queryUserId as string);
     jobsUserId = getObjectId(queryUserId as string);
   }
-  const docs = await col.find(filter).toArray();
+
+  const page = Math.max(1, parseInt(c.req.query('page') ?? '1', 10));
+  const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') ?? '10', 10)));
+  const search = (c.req.query('search') ?? '').trim();
+  if (search) {
+    const rx = escapeRegex(search);
+    filter.$or = [
+      { name: { $regex: rx, $options: 'i' } },
+      { website: { $regex: rx, $options: 'i' } },
+    ];
+  }
+
+  const [total, docs] = await Promise.all([
+    col.countDocuments(filter),
+    col
+      .find(filter)
+      .sort({ name: 1 })
+      .collation({ locale: 'en', strength: 2 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .toArray(),
+  ]);
+
   const normalized = normalizeArray(docs) as Array<Record<string, unknown> & { _id?: string; jobCount?: number }>;
 
   if (jobsUserId) {
@@ -46,7 +86,13 @@ companiesRouter.get('/', async c => {
     }
   }
 
-  return c.json(normalized);
+  return c.json({
+    data: normalized,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit) || 1,
+  });
 });
 
 // Create company (expects body { name, userId, ... })
@@ -109,13 +155,23 @@ companiesRouter.put('/:id', async c => {
 
   const col = await getCollection('companies');
   const updates: any = {};
+  const unset: Record<string, ''> = {};
   if (parsed.data.name) updates.name = parsed.data.name;
-  if (parsed.data.website !== undefined) updates.website = parsed.data.website;
+  if (parsed.data.website !== undefined) {
+    if (parsed.data.website === '') {
+      unset.website = '';
+    } else {
+      updates.website = parsed.data.website;
+    }
+  }
   if (parsed.data.description !== undefined) updates.description = parsed.data.description;
   if (body.updatedAt === undefined) updates.updatedAt = new Date().toISOString();
+  const updateOp: { $set?: typeof updates; $unset?: typeof unset } = {};
+  if (Object.keys(updates).length) updateOp.$set = updates;
+  if (Object.keys(unset).length) updateOp.$unset = unset;
   const res = await col.findOneAndUpdate(
     { _id: getObjectId(id), userId: getObjectId(authUser.id) } as any,
-    { $set: updates },
+    updateOp,
     { returnDocument: 'after' } as any
   );
   const doc = res;

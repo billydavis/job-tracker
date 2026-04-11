@@ -4,7 +4,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import MDEditor from '@uiw/react-md-editor'
 import ApplicationJobList from '../components/ApplicationJobList'
 import JobModal, { type JobFormData } from '../components/JobModal'
-import { companiesQueryKey, useCompaniesQuery, useCompanyQuery } from '../hooks/useCompanies'
+import {
+  companiesQueryKey,
+  useCompaniesQuery,
+  useCompanyQuery,
+  useUpdateCompanyMutation,
+} from '../hooks/useCompanies'
 import { useDeleteJobMutation, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
 import type { Job, JobFilters, JobStatus } from '../types'
 
@@ -24,6 +29,15 @@ function dateAppliedSort(left: Job, right: Job) {
   const leftTime = left.dateApplied ? Date.parse(left.dateApplied) : Number.NEGATIVE_INFINITY
   const rightTime = right.dateApplied ? Date.parse(right.dateApplied) : Number.NEGATIVE_INFINITY
   return rightTime - leftTime
+}
+
+function isValidHttpUrl(s: string): boolean {
+  try {
+    const u = new URL(s)
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 export default function CompanyDetails() {
@@ -59,6 +73,24 @@ export default function CompanyDetails() {
 
   const updateJobMutation = useUpdateJobMutation()
   const deleteJobMutation = useDeleteJobMutation()
+  const updateCompanyMutation = useUpdateCompanyMutation()
+
+  const [markdownColorMode, setMarkdownColorMode] = useState<'light' | 'dark'>('light')
+  const [isEditingDetails, setIsEditingDetails] = useState(false)
+  const [detailsForm, setDetailsForm] = useState({ website: '', description: '' })
+  const [detailsSaveError, setDetailsSaveError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    const updateMode = () => {
+      setMarkdownColorMode(root.classList.contains('dark') ? 'dark' : 'light')
+    }
+    updateMode()
+    const observer = new MutationObserver(updateMode)
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
 
   function invalidateCompanyJobs() {
     queryClient.invalidateQueries({ queryKey: [...companiesQueryKey, id] })
@@ -114,6 +146,41 @@ export default function CompanyDetails() {
     invalidateCompanyJobs()
   }
 
+  function beginEditCompanyDetails() {
+    if (!company) return
+    setDetailsForm({
+      website: company.website ?? '',
+      description: company.description ?? '',
+    })
+    setDetailsSaveError(null)
+    setIsEditingDetails(true)
+  }
+
+  function cancelEditCompanyDetails() {
+    setIsEditingDetails(false)
+    setDetailsSaveError(null)
+  }
+
+  async function saveCompanyDetails() {
+    if (!company?._id) return
+    const w = detailsForm.website.trim()
+    if (w && !isValidHttpUrl(w)) {
+      setDetailsSaveError('Website must be a valid URL (e.g. https://example.com)')
+      return
+    }
+    setDetailsSaveError(null)
+    try {
+      await updateCompanyMutation.mutateAsync({
+        id: company._id,
+        payload: { website: w, description: detailsForm.description },
+      })
+      setIsEditingDetails(false)
+    } catch (err) {
+      const e = err as { error?: string; message?: string }
+      setDetailsSaveError(e?.message ?? e?.error ?? 'Save failed')
+    }
+  }
+
   if (companyLoading) {
     return <div className="text-gray-400 dark:text-gray-500">Loading company…</div>
   }
@@ -161,22 +228,70 @@ export default function CompanyDetails() {
                 : `${applicationTotal} application${applicationTotal === 1 ? '' : 's'} tracked`}
             </p>
           </div>
-          {company.website && (
-            <a
-              href={company.website}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              Visit website ↗
-            </a>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {isEditingDetails ? (
+              <>
+                <button
+                  type="button"
+                  onClick={cancelEditCompanyDetails}
+                  disabled={updateCompanyMutation.isPending}
+                  className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void saveCompanyDetails()}
+                  disabled={updateCompanyMutation.isPending}
+                  className="text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50"
+                >
+                  {updateCompanyMutation.isPending ? 'Saving…' : 'Save'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={beginEditCompanyDetails}
+                  className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Edit details
+                </button>
+                {company.website ? (
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Visit website ↗
+                  </a>
+                ) : null}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">Website</p>
-            <p className="text-gray-900 dark:text-white mt-0.5 break-all">{company.website || 'Not set'}</p>
+            {isEditingDetails ? (
+              <input
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                value={detailsForm.website}
+                onChange={(e) =>
+                  setDetailsForm((f) => ({ ...f, website: e.target.value }))
+                }
+                placeholder="https://example.com (leave empty to remove)"
+                className="mt-1.5 w-full text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <p className="text-gray-900 dark:text-white mt-0.5 break-all">
+                {company.website || 'Not set'}
+              </p>
+            )}
           </div>
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">Created</p>
@@ -186,17 +301,39 @@ export default function CompanyDetails() {
 
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Description</p>
-          <div
-            data-color-mode="light"
-            className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2"
-          >
-            {company.description ? (
-              <MDEditor.Markdown source={company.description} className="bg-transparent! text-sm text-slate-800 dark:text-slate-200 **:text-slate-800 dark:**:text-slate-200" />
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No description yet.</p>
-            )}
-          </div>
+          {isEditingDetails ? (
+            <div data-color-mode={markdownColorMode} className="min-w-0">
+              <MDEditor
+                key={`company-desc-${markdownColorMode}`}
+                value={detailsForm.description}
+                onChange={(v) =>
+                  setDetailsForm((f) => ({ ...f, description: v ?? '' }))
+                }
+                height={220}
+                preview="live"
+                visibleDragbar={false}
+              />
+            </div>
+          ) : (
+            <div
+              data-color-mode={markdownColorMode}
+              className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2"
+            >
+              {company.description ? (
+                <MDEditor.Markdown
+                  source={company.description}
+                  className="bg-transparent! text-sm text-slate-800 dark:text-slate-200 **:text-slate-800 dark:**:text-slate-200"
+                />
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No description yet.</p>
+              )}
+            </div>
+          )}
         </div>
+
+        {detailsSaveError && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{detailsSaveError}</p>
+        )}
       </div>
 
       <div className="min-w-0">

@@ -68,6 +68,20 @@ export interface PaginatedJobs {
   totalPages: number
 }
 
+export interface CompanyFilters {
+  page: number
+  limit: number
+  search: string
+}
+
+export interface PaginatedCompanies {
+  data: Company[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 export interface ApiError {
   status: number
   message: string

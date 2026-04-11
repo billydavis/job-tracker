@@ -198,12 +198,17 @@ describe('Integration — auth routes (real MongoDB)', () => {
             expect(jobRes.status).toBe(201);
         }
 
-        const listReq = new Request('http://localhost/api/companies', {
+        const listReq = new Request('http://localhost/api/companies?page=1&limit=20', {
             headers: { Cookie: cookie },
         });
         const listRes = await app.fetch(listReq);
         expect(listRes.status).toBe(200);
-        const list = (await listRes.json()) as Array<{ _id: string; name: string; jobCount?: number }>;
+        const listBody = (await listRes.json()) as {
+            data: Array<{ _id: string; name: string; jobCount?: number }>;
+            total: number;
+        };
+        expect(listBody.total).toBe(2);
+        const list = listBody.data;
 
         const withJobs = list.find((c) => c._id === company._id);
         const withoutJobs = list.find((c) => c._id === emptyCo._id);
@@ -225,5 +230,41 @@ describe('Integration — auth routes (real MongoDB)', () => {
         });
         const badCoRes = await app.fetch(badCoReq);
         expect(badCoRes.status).toBe(400);
+    });
+
+    it('clears company website and updates description via PUT when authenticated', async () => {
+        const payload = { name: 'Put Co User', email: 'putco@example.com', password: 'password123' };
+        const regReq = new Request('http://localhost/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const regRes = await app.fetch(regReq);
+        expect(regRes.status).toBe(201);
+        const cookie = (regRes.headers.get('set-cookie') ?? '').split(';')[0];
+
+        const createReq = new Request('http://localhost/api/companies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Cookie: cookie },
+            body: JSON.stringify({
+                name: 'Clear Web Inc',
+                website: 'https://example.com',
+                description: 'Hello',
+            }),
+        });
+        const createRes = await app.fetch(createReq);
+        expect(createRes.status).toBe(201);
+        const co = (await createRes.json()) as { _id: string };
+
+        const putReq = new Request(`http://localhost/api/companies/${co._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Cookie: cookie },
+            body: JSON.stringify({ website: '', description: '**Updated**' }),
+        });
+        const putRes = await app.fetch(putReq);
+        expect(putRes.status).toBe(200);
+        const updated = (await putRes.json()) as { website?: string; description?: string };
+        expect(updated.website == null || updated.website === '').toBe(true);
+        expect(updated.description).toBe('**Updated**');
     });
 });

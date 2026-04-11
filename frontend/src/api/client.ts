@@ -1,4 +1,15 @@
-import type { User, Job, Company, Note, ApiError, JobFilters, PaginatedJobs, JobStats } from '../types'
+import type {
+  User,
+  Job,
+  Company,
+  Note,
+  ApiError,
+  JobFilters,
+  PaginatedJobs,
+  CompanyFilters,
+  PaginatedCompanies,
+  JobStats,
+} from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 
@@ -135,8 +146,17 @@ export function getJobStats(weekOffset: number): Promise<JobStats> {
 
 // ── Companies ─────────────────────────────────────────────────────────────────
 
-export function getCompanies(): Promise<Company[]> {
-  return request('/api/companies') as Promise<Company[]>
+export function getCompaniesSelect(): Promise<Company[]> {
+  return request('/api/companies/select') as Promise<Company[]>
+}
+
+export function getCompanies(filters: CompanyFilters): Promise<PaginatedCompanies> {
+  const params = new URLSearchParams({
+    page: String(filters.page),
+    limit: String(filters.limit),
+  })
+  if (filters.search) params.set('search', filters.search)
+  return request(`/api/companies?${params}`) as Promise<PaginatedCompanies>
 }
 
 export function getCompany(id: string): Promise<Company> {
@@ -188,6 +208,6 @@ export function deleteNote(id: string): Promise<void> {
 export default {
   login, register, me, logout,
   getJobs, getJob, createJob, updateJob, deleteJob, getJobStats,
-  getCompanies, getCompany, createCompany, updateCompany, deleteCompany,
+  getCompaniesSelect, getCompanies, getCompany, createCompany, updateCompany, deleteCompany,
   getNotes, createNote, updateNote, deleteNote,
 }
