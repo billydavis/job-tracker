@@ -1,9 +1,55 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['job-hunter192x192.png', 'job-hunter512x512.png'],
+      manifest: {
+        name: 'Job Tracker',
+        short_name: 'Job Tracker',
+        description: 'Track job applications, companies, and notes',
+        theme_color: '#2563eb',
+        background_color: '#f3f4f6',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        icons: [
+          {
+            src: '/job-hunter192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/job-hunter512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+        ],
+      },
+      workbox: {
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api/],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff,webmanifest}'],
+        // Main bundle exceeds Workbox default 2 MiB precache limit
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -25,5 +71,5 @@ export default defineConfig({
         rewrite: (path) => path,
       },
     },
-  }
+  },
 })

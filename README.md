@@ -21,6 +21,7 @@ If you're interested in hiring me or want to know more about my background, you 
 ### Frontend
 - **React 18** — UI library
 - **Vite** — build tool and dev server. Proxies `/api/*` to the backend in development so cookies work without CORS issues.
+- **PWA** — production builds include a web app manifest and service worker (`vite-plugin-pwa`) so you can install the app on desktop or mobile from a **secure origin** (HTTPS, or `localhost` for testing). Use `vite preview` after `vite build`, or open your deployed site in Chrome/Edge and use the install option in the address bar. API traffic stays **network-only** in the service worker so cookie auth is not served from cache.
 - **React Router v7** — client-side routing with protected route wrappers for authenticated and public-only pages
 - **TanStack React Query v5** — all server state lives here. Custom hooks (`useJobs`, `useCompanies`, `useNotes`, etc.) wrap every API call. Automatic retry on 401 triggers the refresh flow before re-fetching.
 - **Radix UI** — accessible, unstyled component primitives (dialogs, dropdowns, selects, etc.)
