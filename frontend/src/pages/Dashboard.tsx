@@ -29,6 +29,7 @@ function formatAppliedDate(dateApplied?: string) {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   }).format(new Date(timestamp))
 }
 

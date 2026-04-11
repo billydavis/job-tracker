@@ -23,7 +23,7 @@ function formatDate(value?: string) {
   const timestamp = Date.parse(value)
   if (Number.isNaN(timestamp)) return 'Not set'
   return new Intl.DateTimeFormat(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
+    year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
   }).format(new Date(timestamp))
 }
 
@@ -81,7 +81,13 @@ export default function JobDetails() {
   }, [])
 
   const sortedJobs = useMemo(() => {
-    return [...jobs].sort((left, right) => toTimestamp(right.dateApplied) - toTimestamp(left.dateApplied))
+    return [...jobs].sort((left, right) => {
+      const dateDiff = toTimestamp(right.dateApplied) - toTimestamp(left.dateApplied)
+      if (dateDiff !== 0) return dateDiff
+      const createdDiff = toTimestamp(right.createdAt) - toTimestamp(left.createdAt)
+      if (createdDiff !== 0) return createdDiff
+      return (left._id ?? '').localeCompare(right._id ?? '')
+    })
   }, [jobs])
 
   const activeIndex = sortedJobs.findIndex(j => j._id === id)

@@ -7,10 +7,10 @@ interface Props {
   isLoading: boolean
 }
 
-const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
 
 function formatDate(d: string) {
-  const parsed = new Date(d + 'T00:00:00')
+  const parsed = new Date(d)
   return isNaN(parsed.getTime()) ? d : fmt.format(parsed)
 }
 

@@ -99,7 +99,7 @@ jobsRouter.get('/', async c => {
     const [total, docs] = await Promise.all([
         col.countDocuments(filter),
         col.find(filter)
-            .sort({ dateApplied: -1 })
+            .sort({ dateApplied: -1, createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
             .toArray(),

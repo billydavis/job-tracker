@@ -17,7 +17,7 @@ function formatDate(value?: string) {
   const timestamp = Date.parse(value)
   if (Number.isNaN(timestamp)) return 'Not set'
   return new Intl.DateTimeFormat(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
+    year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
   }).format(new Date(timestamp))
 }
 
