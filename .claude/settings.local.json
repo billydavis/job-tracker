@@ -4,5 +4,6 @@
       "Bash(bun add:*)",
       "Bash(bun run:*)"
     ]
-  }
+  },
+  "cursor.cmdLineHook.enabled": false
 }

@@ -115,7 +115,14 @@ async function main() {
     title,
     status: pick(STATUSES),
     location: pick(LOCATIONS),
-    salary: Math.random() > 0.4 ? Math.round((80 + Math.random() * 120) * 1000 / 1000) * 1000 : undefined,
+    salaryRange:
+      Math.random() > 0.4
+        ? (() => {
+            const low = Math.round(80 + Math.random() * 50) * 1000
+            const high = low + Math.round(10 + Math.random() * 50) * 1000
+            return { lowEnd: low, highEnd: high, period: 'yearly' as const }
+          })()
+        : undefined,
     dateApplied: Math.random() > 0.2 ? randomDate(120) : undefined,
     createdAt: now,
     _seedData: true,

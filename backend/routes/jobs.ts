@@ -4,6 +4,13 @@ import { getCollection, getObjectId } from '../db';
 import { createJobSchema, updateJobSchema } from '../validators/jobs';
 import { normalizeArray, normalizeDoc } from '../utils/dto';
 
+function normalizeSalaryRange(r: { lowEnd?: number; highEnd?: number; period: 'yearly' | 'hourly' }) {
+    const out: Record<string, unknown> = { period: r.period ?? 'yearly' };
+    if (r.lowEnd !== undefined) out.lowEnd = r.lowEnd;
+    if (r.highEnd !== undefined) out.highEnd = r.highEnd;
+    return out;
+}
+
 const jobsRouter = new Hono();
 
 // Job stats (status/location distribution + weekly applied counts)
@@ -138,11 +145,13 @@ jobsRouter.post('/', async c => {
         description: parsed.data.description,
         contact: parsed.data.contact,
         location: parsed.data.location,
-        salary: parsed.data.salary,
         url: parsed.data.url,
         status: parsed.data.status ?? 'waiting',
         dateApplied: parsed.data.dateApplied,
         createdAt: now,
+        ...(parsed.data.salaryRange
+            ? { salaryRange: normalizeSalaryRange(parsed.data.salaryRange) }
+            : {}),
     } as any;
 
     const res = await col.insertOne(doc);
@@ -172,22 +181,35 @@ jobsRouter.put('/:id', async c => {
     const authUser = c.get('user') as any;
     if (!authUser?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-    const updates: any = {};
-    if (parsed.data.companyId !== undefined) updates.companyId = getObjectId(parsed.data.companyId);
-    if (parsed.data.title !== undefined) updates.title = parsed.data.title;
-    if (parsed.data.description !== undefined) updates.description = parsed.data.description;
-    if (parsed.data.contact !== undefined) updates.contact = parsed.data.contact;
-    if (parsed.data.location !== undefined) updates.location = parsed.data.location;
-    if (parsed.data.salary !== undefined) updates.salary = parsed.data.salary;
-    if (parsed.data.url !== undefined) updates.url = parsed.data.url;
-    if (parsed.data.status !== undefined) updates.status = parsed.data.status;
-    if (parsed.data.dateApplied !== undefined) updates.dateApplied = parsed.data.dateApplied;
-    if (body.updatedAt === undefined) updates.updatedAt = new Date().toISOString();
+    const set: Record<string, unknown> = {};
+    const unset: Record<string, string> = {};
+    if (parsed.data.companyId !== undefined) set.companyId = getObjectId(parsed.data.companyId);
+    if (parsed.data.title !== undefined) set.title = parsed.data.title;
+    if (parsed.data.description !== undefined) set.description = parsed.data.description;
+    if (parsed.data.contact !== undefined) set.contact = parsed.data.contact;
+    if (parsed.data.location !== undefined) set.location = parsed.data.location;
+    if (parsed.data.url !== undefined) set.url = parsed.data.url;
+    if (parsed.data.status !== undefined) set.status = parsed.data.status;
+    if (parsed.data.dateApplied !== undefined) set.dateApplied = parsed.data.dateApplied;
+    if (parsed.data.salaryRange !== undefined) {
+        if (parsed.data.salaryRange === null) {
+            unset.salary = '';
+            unset.salaryRange = '';
+        } else {
+            set.salaryRange = normalizeSalaryRange(parsed.data.salaryRange);
+            unset.salary = '';
+        }
+    }
+    if (body.updatedAt === undefined) set.updatedAt = new Date().toISOString();
+
+    const updateOp: Record<string, unknown> = {};
+    if (Object.keys(set).length) updateOp.$set = set;
+    if (Object.keys(unset).length) updateOp.$unset = unset;
 
     const col = await getCollection('jobs');
     const res = await col.findOneAndUpdate(
         { _id: getObjectId(id), userId: getObjectId(authUser.id) } as any,
-        { $set: updates },
+        updateOp,
         { returnDocument: 'after' } as any
     );
     const doc = res;

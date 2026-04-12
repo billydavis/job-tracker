@@ -5,6 +5,7 @@ import type { Company, Job, JobStatus } from '../types'
 import NotesPanel from './NotesPanel'
 import ListPaginationBar from './ListPaginationBar'
 import { ALL_STATUSES, STATUS_STYLES, formatAppliedDate } from '../lib/jobApplicationUi'
+import { formatJobSalary } from '../lib/formatJobSalary'
 
 export interface ApplicationJobListProps {
   jobs: Job[]
@@ -75,7 +76,9 @@ export default function ApplicationJobList({
                 {showEmptyHint && emptyHint}
               </div>
             ) : (
-              jobs.map((j) => (
+              jobs.map((j) => {
+                const salaryLabel = formatJobSalary(j)
+                return (
                 <div
                   key={j._id}
                   className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
@@ -94,9 +97,9 @@ export default function ApplicationJobList({
                             {j.location}
                           </span>
                         )}
-                        {j.salary != null && (
+                        {salaryLabel != null && (
                           <span className="text-xs text-gray-400 dark:text-gray-500">
-                            ${j.salary.toLocaleString()}
+                            {salaryLabel}
                           </span>
                         )}
                       </div>
@@ -160,7 +163,7 @@ export default function ApplicationJobList({
                     </div>
                   </div>
                 </div>
-              ))
+              )})
             )}
           </div>
           <ListPaginationBar

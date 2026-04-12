@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createJob, deleteJob, getJob, getJobs, updateJob } from '../api/client'
-import type { Job, JobFilters, PaginatedJobs } from '../types'
+import type { Job, JobFilters, JobMutationPayload, PaginatedJobs } from '../types'
 
 export const jobsQueryKey = ['jobs'] as const
 
@@ -39,7 +39,7 @@ export function useJobQuery(id: string) {
 
 export function useCreateJobMutation() {
   const queryClient = useQueryClient()
-  return useMutation<Job, Error, Partial<Job>>({
+  return useMutation<Job, Error, JobMutationPayload>({
     mutationFn: createJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobsQueryKey })
@@ -49,7 +49,7 @@ export function useCreateJobMutation() {
 
 export function useUpdateJobMutation() {
   const queryClient = useQueryClient()
-  return useMutation<Job, Error, { id: string; payload: Partial<Job> }>({
+  return useMutation<Job, Error, { id: string; payload: JobMutationPayload }>({
     mutationFn: ({ id, payload }) => updateJob(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobsQueryKey })

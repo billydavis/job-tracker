@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
-import type { Job, JobFilters, JobStatus } from '../types'
+import type { Job, JobFormData, JobFilters, JobStatus } from '../types'
 import { useJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation } from '../hooks/useJobs'
 import { useCompaniesQuery } from '../hooks/useCompanies'
-import JobModal, { type JobFormData } from '../components/JobModal'
+import JobModal from '../components/JobModal'
+import { jobFormToApiPayload } from '../lib/jobFormPayload'
 import ApplicationJobList from '../components/ApplicationJobList'
 import { ALL_STATUSES } from '../lib/jobApplicationUi'
 import { getListPageSize, setListPageSize } from '../lib/listPageSize'
@@ -30,17 +31,7 @@ export default function Jobs() {
   const deleteJobMutation = useDeleteJobMutation()
 
   async function handleModalSubmit(form: JobFormData) {
-    const payload: Partial<Job> = {
-      title: form.title,
-      companyId: form.companyId || undefined,
-      status: form.status,
-      location: form.location || undefined,
-      salary: form.salary ? Number(form.salary) : undefined,
-      url: form.url || undefined,
-      dateApplied: form.dateApplied || undefined,
-      description: form.description || undefined,
-      contact: form.contact || undefined,
-    }
+    const payload = jobFormToApiPayload(form, { isEdit: Boolean(editingJob?._id) })
     if (editingJob?._id) {
       await updateJobMutation.mutateAsync({ id: editingJob._id, payload })
     } else {

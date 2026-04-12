@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import MDEditor from '@uiw/react-md-editor'
 import ApplicationJobList from '../components/ApplicationJobList'
-import JobModal, { type JobFormData } from '../components/JobModal'
+import JobModal from '../components/JobModal'
+import { jobFormToApiPayload } from '../lib/jobFormPayload'
 import {
   companiesQueryKey,
   useCompaniesQuery,
@@ -11,7 +12,7 @@ import {
   useUpdateCompanyMutation,
 } from '../hooks/useCompanies'
 import { useDeleteJobMutation, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
-import type { Job, JobFilters, JobStatus } from '../types'
+import type { Job, JobFormData, JobFilters, JobStatus } from '../types'
 
 /** API max per page; company detail loads all applications for this company in one request when ≤100. */
 const COMPANY_JOBS_LIMIT = 100
@@ -110,17 +111,7 @@ export default function CompanyDetails() {
   const totalPages = jobsResponse?.totalPages ?? 1
 
   async function handleModalSubmit(form: JobFormData) {
-    const payload: Partial<Job> = {
-      title: form.title,
-      companyId: form.companyId || undefined,
-      status: form.status,
-      location: form.location || undefined,
-      salary: form.salary ? Number(form.salary) : undefined,
-      url: form.url || undefined,
-      dateApplied: form.dateApplied || undefined,
-      description: form.description || undefined,
-      contact: form.contact || undefined,
-    }
+    const payload = jobFormToApiPayload(form, { isEdit: Boolean(editingJob?._id) })
     if (editingJob?._id) {
       await updateJobMutation.mutateAsync({ id: editingJob._id, payload })
       invalidateCompanyJobs()

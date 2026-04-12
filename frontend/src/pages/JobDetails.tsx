@@ -7,6 +7,7 @@ import { useNotesQuery } from '../hooks/useNotes'
 import NotesPanel from '../components/NotesPanel'
 import { DEFAULT_PAGE_SIZE } from '../api/client'
 import type { JobFilters, JobStatus } from '../types'
+import { formatJobSalary } from '../lib/formatJobSalary'
 
 const STATUS_STYLES: Record<JobStatus, string> = {
   waiting: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
@@ -238,7 +239,7 @@ export default function JobDetails() {
           </div>
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">Salary</p>
-            <p className="text-gray-900 dark:text-white mt-0.5">{job.salary ? `$${job.salary.toLocaleString()}` : 'Not set'}</p>
+            <p className="text-gray-900 dark:text-white mt-0.5">{formatJobSalary(job) ?? 'Not set'}</p>
           </div>
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">Contact</p>

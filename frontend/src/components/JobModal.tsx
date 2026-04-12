@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { Job, JobStatus, JobLocation, Company } from '../types'
+import type { Job, JobFormData, JobStatus, JobLocation, Company } from '../types'
 import { useCreateCompanyMutation } from '../hooks/useCompanies'
+import { formatLocalDateInput } from '../lib/jobFormPayload'
+import {
+  NEW_COMPANY_SENTINEL,
+  jobModalSubmitSchema,
+  jobModalFieldErrorsFromZod,
+  type JobModalFieldKey,
+} from '../lib/jobModalFormSchema'
+
+export type { JobFormData } from '../types'
+
+const inputErrCls =
+  'border-red-500 dark:border-red-500 focus:border-red-500 focus:ring-red-500'
 
 const inputCls =
   'w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 ' +
@@ -16,18 +28,6 @@ const STATUSES: JobStatus[] = [
 
 const LOCATIONS: JobLocation[] = ['on-site', 'remote', 'hybrid']
 
-export interface JobFormData {
-  title: string
-  companyId: string
-  status: JobStatus
-  location: JobLocation | ''
-  salary: string
-  url: string
-  dateApplied: string
-  description: string
-  contact: string
-}
-
 interface Props {
   /** When set, the modal is in edit mode. */
   job?: Job
@@ -42,29 +42,63 @@ function blankForm(): JobFormData {
     companyId: '',
     status: 'applied',
     location: '',
-    salary: '',
+    salaryLowEnd: '',
+    salaryHighEnd: '',
+    salaryPeriod: 'yearly',
     url: '',
-    dateApplied: '',
+    dateApplied: formatLocalDateInput(new Date()),
     description: '',
     contact: '',
   }
 }
 
 function jobToForm(job: Job): JobFormData {
+  if (job.salaryRange) {
+    const { lowEnd, highEnd, period } = job.salaryRange
+    return {
+      title: job.title ?? '',
+      companyId: job.companyId ?? '',
+      status: job.status ?? 'applied',
+      location: job.location ?? '',
+      salaryLowEnd: lowEnd != null ? String(lowEnd) : '',
+      salaryHighEnd: highEnd != null ? String(highEnd) : '',
+      salaryPeriod: period ?? 'yearly',
+      url: job.url ?? '',
+      dateApplied: job.dateApplied ?? '',
+      description: job.description ?? '',
+      contact: job.contact ?? '',
+    }
+  }
+  if (job.salary != null) {
+    const s = String(job.salary)
+    return {
+      title: job.title ?? '',
+      companyId: job.companyId ?? '',
+      status: job.status ?? 'applied',
+      location: job.location ?? '',
+      salaryLowEnd: s,
+      salaryHighEnd: s,
+      salaryPeriod: 'yearly',
+      url: job.url ?? '',
+      dateApplied: job.dateApplied ?? '',
+      description: job.description ?? '',
+      contact: job.contact ?? '',
+    }
+  }
   return {
     title: job.title ?? '',
     companyId: job.companyId ?? '',
     status: job.status ?? 'applied',
     location: job.location ?? '',
-    salary: job.salary != null ? String(job.salary) : '',
+    salaryLowEnd: '',
+    salaryHighEnd: '',
+    salaryPeriod: 'yearly',
     url: job.url ?? '',
     dateApplied: job.dateApplied ?? '',
     description: job.description ?? '',
     contact: job.contact ?? '',
   }
 }
-
-const NEW_COMPANY_SENTINEL = '__new__'
 
 // ---------------------------------------------------------------------------
 // CompanyCombobox
@@ -77,6 +111,9 @@ interface CompanyComboboxProps {
   onSelectExisting: (id: string) => void
   onCreateNew: (name: string) => void
   onClear: () => void
+  inputId?: string
+  ariaInvalid?: boolean
+  ariaErrorMessage?: string
 }
 
 function CompanyCombobox({
@@ -86,6 +123,9 @@ function CompanyCombobox({
   onSelectExisting,
   onCreateNew,
   onClear,
+  inputId,
+  ariaInvalid,
+  ariaErrorMessage,
 }: CompanyComboboxProps) {
   const isCreating = selectedId === NEW_COMPANY_SENTINEL
   const selectedCompany = companies.find(c => c._id === selectedId)
@@ -182,7 +222,8 @@ function CompanyCombobox({
   return (
     <div className="relative">
       <input
-        className={inputCls}
+        id={inputId}
+        className={inputCls + (ariaInvalid ? ` ${inputErrCls}` : '')}
         value={inputValue}
         onChange={handleChange}
         onFocus={() => setIsOpen(true)}
@@ -192,6 +233,8 @@ function CompanyCombobox({
         autoComplete="off"
         aria-autocomplete="list"
         aria-expanded={dropdownVisible}
+        aria-invalid={ariaInvalid || undefined}
+        aria-errormessage={ariaErrorMessage}
       />
       {dropdownVisible && (
         <ul
@@ -235,10 +278,30 @@ function CompanyCombobox({
 // JobModal
 // ---------------------------------------------------------------------------
 
+const formKeyToFieldError: Partial<Record<keyof JobFormData, JobModalFieldKey>> = {
+  title: 'title',
+  dateApplied: 'dateApplied',
+  salaryLowEnd: 'salaryLowEnd',
+  salaryHighEnd: 'salaryHighEnd',
+  url: 'url',
+  contact: 'contact',
+  description: 'description',
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null
+  return (
+    <p id={id} className="mt-1 text-xs text-red-600 dark:text-red-400" role="alert">
+      {message}
+    </p>
+  )
+}
+
 export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
   const [form, setForm] = useState<JobFormData>(() => job ? jobToForm(job) : blankForm())
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<JobModalFieldKey, string>>>({})
   const [newCompanyName, setNewCompanyName] = useState('')
   const createCompanyMutation = useCreateCompanyMutation()
 
@@ -248,19 +311,43 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
   useEffect(() => {
     setForm(job ? jobToForm(job) : blankForm())
     setError(null)
+    setFieldErrors({})
     setNewCompanyName('')
   }, [job])
 
+  function clearFieldError(key: JobModalFieldKey) {
+    setFieldErrors((e) => {
+      if (!e[key]) return e
+      const next = { ...e }
+      delete next[key]
+      return next
+    })
+  }
+
+  function clearCompanyFieldErrors() {
+    setFieldErrors((e) => {
+      if (!e.companyId && !e.newCompanyName) return e
+      const next = { ...e }
+      delete next.companyId
+      delete next.newCompanyName
+      return next
+    })
+  }
+
   function set<K extends keyof JobFormData>(key: K, value: JobFormData[K]) {
+    const errKey = formKeyToFieldError[key]
+    if (errKey) clearFieldError(errKey)
     setForm(f => ({ ...f, [key]: value }))
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    setFieldErrors({})
 
-    if (!form.companyId) {
-      setError('Please select or create a company')
+    const parsed = jobModalSubmitSchema.safeParse({ ...form, newCompanyName })
+    if (!parsed.success) {
+      setFieldErrors(jobModalFieldErrorsFromZod(parsed.error))
       return
     }
 
@@ -269,7 +356,6 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
       let resolvedForm = form
       if (isCreatingCompany) {
         const trimmed = newCompanyName.trim()
-        if (!trimmed) { setError('Please enter a company name'); setSubmitting(false); return }
         const created = await createCompanyMutation.mutateAsync({ name: trimmed })
         resolvedForm = { ...form, companyId: created._id ?? '' }
       }
@@ -303,30 +389,75 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
+        <form noValidate onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
           {/* Company — first field */}
           <div>
-            <label className={labelCls}>Company *</label>
+            <label className={labelCls} htmlFor="job-modal-company">Company *</label>
             <CompanyCombobox
+              inputId="job-modal-company"
               companies={companies}
               selectedId={form.companyId}
               newCompanyName={newCompanyName}
-              onSelectExisting={id => { set('companyId', id); setNewCompanyName('') }}
-              onCreateNew={name => { set('companyId', NEW_COMPANY_SENTINEL); setNewCompanyName(name) }}
-              onClear={() => { set('companyId', ''); setNewCompanyName('') }}
+              onSelectExisting={id => {
+                clearCompanyFieldErrors()
+                setForm(f => ({ ...f, companyId: id }))
+                setNewCompanyName('')
+              }}
+              onCreateNew={name => {
+                clearCompanyFieldErrors()
+                setForm(f => ({ ...f, companyId: NEW_COMPANY_SENTINEL }))
+                setNewCompanyName(name)
+              }}
+              onClear={() => {
+                clearCompanyFieldErrors()
+                setForm(f => ({ ...f, companyId: '' }))
+                setNewCompanyName('')
+              }}
+              ariaInvalid={Boolean(fieldErrors.companyId || fieldErrors.newCompanyName)}
+              ariaErrorMessage={
+                fieldErrors.companyId ?? fieldErrors.newCompanyName
+                  ? 'job-modal-company-error'
+                  : undefined
+              }
+            />
+            <FieldError
+              id="job-modal-company-error"
+              message={fieldErrors.companyId ?? fieldErrors.newCompanyName}
             />
           </div>
 
-          {/* Title */}
-          <div>
-            <label className={labelCls}>Job title *</label>
-            <input
-              className={inputCls}
-              value={form.title}
-              onChange={e => set('title', e.target.value)}
-              placeholder="Software Engineer"
-              required
-            />
+          {/* Title + Date applied (2/3 + 1/3) */}
+          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3 items-start">
+            <div className="min-w-0">
+              <label className={labelCls} htmlFor="job-modal-title">Job title *</label>
+              <input
+                id="job-modal-title"
+                className={inputCls + (fieldErrors.title ? ` ${inputErrCls}` : '')}
+                value={form.title}
+                onChange={e => set('title', e.target.value)}
+                placeholder="Software Engineer"
+                aria-invalid={fieldErrors.title ? true : undefined}
+                aria-describedby={fieldErrors.title ? 'job-modal-title-error' : undefined}
+              />
+              <FieldError id="job-modal-title-error" message={fieldErrors.title} />
+            </div>
+            <div className="min-w-0">
+              <label className={labelCls} htmlFor="job-modal-date-applied">Date applied</label>
+              <input
+                id="job-modal-date-applied"
+                type="date"
+                className={
+                  inputCls +
+                  ' w-full min-w-0' +
+                  (fieldErrors.dateApplied ? ` ${inputErrCls}` : '')
+                }
+                value={form.dateApplied}
+                onChange={e => set('dateApplied', e.target.value)}
+                aria-invalid={fieldErrors.dateApplied ? true : undefined}
+                aria-describedby={fieldErrors.dateApplied ? 'job-modal-date-error' : undefined}
+              />
+              <FieldError id="job-modal-date-error" message={fieldErrors.dateApplied} />
+            </div>
           </div>
 
           {/* Status + Location */}
@@ -358,63 +489,106 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
             </div>
           </div>
 
-          {/* Salary + Date Applied */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Salary</label>
-              <input
-                type="number"
-                className={inputCls}
-                value={form.salary}
-                onChange={e => set('salary', e.target.value)}
-                placeholder="75000"
-                min={0}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Date applied</label>
-              <input
-                type="date"
-                className={inputCls}
-                value={form.dateApplied}
-                onChange={e => set('dateApplied', e.target.value)}
-              />
+          {/* Salary range */}
+          <div>
+            <label className={labelCls}>Salary range</label>
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-start">
+              <div className="min-w-0">
+                <input
+                  type="number"
+                  className={
+                    inputCls +
+                    ' min-w-0 w-full' +
+                    (fieldErrors.salaryLowEnd ? ` ${inputErrCls}` : '')
+                  }
+                  value={form.salaryLowEnd}
+                  onChange={e => set('salaryLowEnd', e.target.value)}
+                  placeholder="Low"
+                  min={0}
+                  aria-label="Salary low end"
+                  aria-invalid={fieldErrors.salaryLowEnd ? true : undefined}
+                  aria-describedby={fieldErrors.salaryLowEnd ? 'job-modal-salary-low-error' : undefined}
+                />
+                <FieldError id="job-modal-salary-low-error" message={fieldErrors.salaryLowEnd} />
+              </div>
+              <div className="min-w-0">
+                <input
+                  type="number"
+                  className={
+                    inputCls +
+                    ' min-w-0 w-full' +
+                    (fieldErrors.salaryHighEnd ? ` ${inputErrCls}` : '')
+                  }
+                  value={form.salaryHighEnd}
+                  onChange={e => set('salaryHighEnd', e.target.value)}
+                  placeholder="High"
+                  min={0}
+                  aria-label="Salary high end"
+                  aria-invalid={fieldErrors.salaryHighEnd ? true : undefined}
+                  aria-describedby={fieldErrors.salaryHighEnd ? 'job-modal-salary-high-error' : undefined}
+                />
+                <FieldError id="job-modal-salary-high-error" message={fieldErrors.salaryHighEnd} />
+              </div>
+              <select
+                className={
+                  inputCls +
+                  ' w-24 shrink-0 px-2 py-1.5 text-xs font-normal'
+                }
+                value={form.salaryPeriod}
+                onChange={e => set('salaryPeriod', e.target.value as JobFormData['salaryPeriod'])}
+                aria-label="Pay period"
+              >
+                <option value="yearly">Yearly</option>
+                <option value="hourly">Hourly</option>
+              </select>
             </div>
           </div>
 
           {/* URL */}
           <div>
-            <label className={labelCls}>Job posting URL</label>
+            <label className={labelCls} htmlFor="job-modal-url">Job posting URL</label>
             <input
+              id="job-modal-url"
               type="url"
-              className={inputCls}
+              className={inputCls + (fieldErrors.url ? ` ${inputErrCls}` : '')}
               value={form.url}
               onChange={e => set('url', e.target.value)}
               placeholder="https://example.com/jobs/123"
+              aria-invalid={fieldErrors.url ? true : undefined}
+              aria-describedby={fieldErrors.url ? 'job-modal-url-error' : undefined}
             />
+            <FieldError id="job-modal-url-error" message={fieldErrors.url} />
           </div>
 
           {/* Contact */}
           <div>
-            <label className={labelCls}>Contact</label>
+            <label className={labelCls} htmlFor="job-modal-contact">Contact</label>
             <input
-              className={inputCls}
+              id="job-modal-contact"
+              className={inputCls + (fieldErrors.contact ? ` ${inputErrCls}` : '')}
               value={form.contact}
               onChange={e => set('contact', e.target.value)}
               placeholder="Recruiter name or email"
+              aria-invalid={fieldErrors.contact ? true : undefined}
+              aria-describedby={fieldErrors.contact ? 'job-modal-contact-error' : undefined}
             />
+            <FieldError id="job-modal-contact-error" message={fieldErrors.contact} />
           </div>
 
           {/* Description */}
           <div>
-            <label className={labelCls}>Job Description</label>
+            <label className={labelCls} htmlFor="job-modal-description">Job Description</label>
             <textarea
-              className={inputCls + ' resize-none'}
+              id="job-modal-description"
+              className={inputCls + ' resize-none' + (fieldErrors.description ? ` ${inputErrCls}` : '')}
               rows={3}
               value={form.description}
               onChange={e => set('description', e.target.value)}
               placeholder="Any extra details…"
+              aria-invalid={fieldErrors.description ? true : undefined}
+              aria-describedby={fieldErrors.description ? 'job-modal-description-error' : undefined}
             />
+            <FieldError id="job-modal-description-error" message={fieldErrors.description} />
           </div>
 
           {error && (

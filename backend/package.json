@@ -6,15 +6,13 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/jsonwebtoken": "^9.0.10",
+    "typescript": "6.0.2",
     "vitest": "^4.0.18"
   },
   "scripts": {
     "test": "vitest",
     "test:bun": "bun test",
     "seed": "bun ./seed.ts"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

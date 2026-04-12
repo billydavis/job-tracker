@@ -1,6 +1,7 @@
 import type {
   User,
   Job,
+  JobMutationPayload,
   Company,
   Note,
   ApiError,
@@ -119,14 +120,14 @@ export function getJob(id: string): Promise<Job> {
   return request(`/api/jobs/${id}`) as Promise<Job>
 }
 
-export function createJob(payload: Partial<Job>): Promise<Job> {
+export function createJob(payload: JobMutationPayload): Promise<Job> {
   return request('/api/jobs', {
     method: 'POST',
     body: JSON.stringify(payload),
   }) as Promise<Job>
 }
 
-export function updateJob(id: string, payload: Partial<Job>): Promise<Job> {
+export function updateJob(id: string, payload: JobMutationPayload): Promise<Job> {
   return request(`/api/jobs/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),

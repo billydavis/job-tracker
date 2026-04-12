@@ -16,6 +16,29 @@ export type JobStatus =
 
 export type JobLocation = 'on-site' | 'remote' | 'hybrid'
 
+export type JobSalaryPeriod = 'yearly' | 'hourly'
+
+export interface JobSalaryRange {
+  lowEnd?: number
+  highEnd?: number
+  period: JobSalaryPeriod
+}
+
+/** Shape of the add/edit job modal (string fields match controlled inputs). */
+export interface JobFormData {
+  title: string
+  companyId: string
+  status: JobStatus
+  location: JobLocation | ''
+  salaryLowEnd: string
+  salaryHighEnd: string
+  salaryPeriod: JobSalaryPeriod
+  url: string
+  dateApplied: string
+  description: string
+  contact: string
+}
+
 export interface Job {
   _id?: string
   userId: string
@@ -24,13 +47,18 @@ export interface Job {
   description?: string
   contact?: string
   location?: JobLocation
+  /** Legacy; prefer salaryRange. */
   salary?: number
+  salaryRange?: JobSalaryRange
   url?: string
   status: JobStatus
   dateApplied?: string
   createdAt?: string
   updatedAt?: string
 }
+
+/** Create/update request body; `salaryRange: null` clears compensation on update. */
+export type JobMutationPayload = Partial<Job> & { salaryRange?: JobSalaryRange | null }
 
 export interface Company {
   _id?: string
