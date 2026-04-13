@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import MDEditor from '@uiw/react-md-editor'
+import { Pencil } from 'lucide-react'
 import { useCompaniesQuery } from '../hooks/useCompanies'
 import { useJobQuery, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
 import { useNotesQuery } from '../hooks/useNotes'
+import JobModal from '../components/JobModal'
 import NotesPanel from '../components/NotesPanel'
 import { DEFAULT_PAGE_SIZE } from '../api/client'
-import type { JobFilters, JobStatus } from '../types'
+import { jobFormToApiPayload } from '../lib/jobFormPayload'
+import type { JobFilters, JobFormData, JobStatus } from '../types'
 import { formatJobSalary } from '../lib/formatJobSalary'
 
 const STATUS_STYLES: Record<JobStatus, string> = {
@@ -65,6 +68,7 @@ export default function JobDetails() {
   const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [descriptionDraft, setDescriptionDraft] = useState('')
   const [descriptionError, setDescriptionError] = useState<string | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -142,6 +146,13 @@ export default function JobDetails() {
     }
   }
 
+  async function handleJobModalSubmit(form: JobFormData) {
+    const jobId = job?._id
+    if (!jobId) return
+    const payload = jobFormToApiPayload(form, { isEdit: true })
+    await updateJobMutation.mutateAsync({ id: jobId, payload })
+  }
+
   useEffect(() => {
     if (!isEditingDescription) return
 
@@ -206,9 +217,19 @@ export default function JobDetails() {
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>
-              {job.status}
-            </span>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>
+                {job.status}
+              </span>
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Pencil className="size-3.5 shrink-0" aria-hidden />
+                Edit job
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => previousJob && navigate(`/jobs/${previousJob._id}`)}
@@ -309,6 +330,15 @@ export default function JobDetails() {
           </div>
         </div>
       </div>
+
+      {editModalOpen && (
+        <JobModal
+          job={job}
+          companies={companies}
+          onSubmit={handleJobModalSubmit}
+          onClose={() => setEditModalOpen(false)}
+        />
+      )}
 
       {isEditingDescription && (
         <div

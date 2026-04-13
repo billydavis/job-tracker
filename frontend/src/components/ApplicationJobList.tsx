@@ -4,7 +4,12 @@ import { Pencil, X } from 'lucide-react'
 import type { Company, Job, JobStatus } from '../types'
 import NotesPanel from './NotesPanel'
 import ListPaginationBar from './ListPaginationBar'
-import { ALL_STATUSES, STATUS_STYLES, formatAppliedDate } from '../lib/jobApplicationUi'
+import {
+  ALL_STATUSES,
+  STATUS_STYLES,
+  formatAppliedDate,
+  locationListBadgeClassName,
+} from '../lib/jobApplicationUi'
 import { formatJobSalary } from '../lib/formatJobSalary'
 
 export interface ApplicationJobListProps {
@@ -93,12 +98,12 @@ export default function ApplicationJobList({
                           {j.title}
                         </Link>
                         {j.location && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-600 rounded px-1.5 py-0.5">
+                          <span className={locationListBadgeClassName(j.location)}>
                             {j.location}
                           </span>
                         )}
                         {salaryLabel != null && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                          <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
                             {salaryLabel}
                           </span>
                         )}

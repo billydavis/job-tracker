@@ -1,4 +1,29 @@
-import type { JobStatus } from '../types'
+import type { JobLocation, JobStatus } from '../types'
+
+const LOCATION_KEYS = ['on-site', 'remote', 'hybrid'] as const satisfies readonly JobLocation[]
+
+/** Outlined pill styles for the job list (border + text + light tint). */
+export const LOCATION_LIST_BADGE_STYLES: Record<JobLocation, string> = {
+  'on-site':
+    'border-sky-500 text-sky-950 bg-sky-100 dark:border-sky-600 dark:text-sky-300 dark:bg-sky-950/40',
+  remote:
+    'border-emerald-600 text-emerald-950 bg-emerald-100 dark:border-emerald-600 dark:text-emerald-300 dark:bg-emerald-950/40',
+  hybrid:
+    'border-violet-600 text-violet-950 bg-violet-100 dark:border-violet-600 dark:text-violet-300 dark:bg-violet-950/40',
+}
+
+const LOCATION_LIST_BADGE_FALLBACK =
+  'border-gray-400 text-gray-800 bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:bg-transparent'
+
+const LOCATION_LIST_BADGE_BASE = 'text-xs rounded px-1.5 py-0.5 border shrink-0'
+
+export function locationListBadgeClassName(location: string | undefined): string {
+  if (!location) return LOCATION_LIST_BADGE_BASE
+  const variant = (LOCATION_KEYS as readonly string[]).includes(location)
+    ? LOCATION_LIST_BADGE_STYLES[location as JobLocation]
+    : LOCATION_LIST_BADGE_FALLBACK
+  return `${LOCATION_LIST_BADGE_BASE} ${variant}`
+}
 
 export const ALL_STATUSES: JobStatus[] = [
   'waiting',
