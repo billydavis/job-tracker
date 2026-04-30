@@ -43,6 +43,12 @@ coverage/
 *.njsproj
 *.sln
 
+# Cursor workspace files
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
+skills-lock.json
+
 # OS files
 .DS_Store
 Thumbs.db
