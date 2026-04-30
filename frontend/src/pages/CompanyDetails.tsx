@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import MDEditor from '@uiw/react-md-editor'
 import ApplicationJobList from '../components/ApplicationJobList'
 import JobModal from '../components/JobModal'
+import PageHeader from '../components/layouts/PageHeader'
+import { Button } from '../components/ui/button'
 import { jobFormToApiPayload } from '../lib/jobFormPayload'
 import {
   companiesQueryKey,
@@ -193,32 +195,31 @@ export default function CompanyDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            ← Back
-          </button>
-          <Link
-            to="/companies"
-            className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            All companies
-          </Link>
-        </div>
-
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{company.name}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {company.jobCount === undefined && jobsListLoading && !jobsResponse
-                ? 'Loading applications…'
-                : `${applicationTotal} application${applicationTotal === 1 ? '' : 's'} tracked`}
-            </p>
+      <PageHeader
+        title={company.name}
+        description={
+          company.jobCount === undefined && jobsListLoading && !jobsResponse
+            ? 'Loading applications…'
+            : `${applicationTotal} application${applicationTotal === 1 ? '' : 's'} tracked`
+        }
+        eyebrow={
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              ← Back
+            </button>
+            <Link
+              to="/companies"
+              className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              All companies
+            </Link>
           </div>
+        }
+        actions={
           <div className="flex flex-wrap items-center gap-2">
             {isEditingDetails ? (
               <>
@@ -230,14 +231,15 @@ export default function CompanyDetails() {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="button"
                   onClick={() => void saveCompanyDetails()}
                   disabled={updateCompanyMutation.isPending}
-                  className="text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50"
+                  variant="glassPrimary"
+                  size="sm"
                 >
                   {updateCompanyMutation.isPending ? 'Saving…' : 'Save'}
-                </button>
+                </Button>
               </>
             ) : (
               <>
@@ -261,9 +263,11 @@ export default function CompanyDetails() {
               </>
             )}
           </div>
-        </div>
+        }
+      />
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div className="bg-white/70 dark:bg-slate-900/55 backdrop-blur-md rounded-xl border border-white/70 dark:border-white/10 p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">Website</p>
             {isEditingDetails ? (

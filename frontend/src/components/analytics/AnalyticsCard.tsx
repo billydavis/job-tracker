@@ -17,9 +17,11 @@ export default function AnalyticsCard({
   contentClassName,
 }: AnalyticsCardProps) {
   return (
-    <Card className={`gap-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${className ?? ''}`.trim()}>
+    <Card
+      className={`gap-0 border-white/70 dark:border-white/10 bg-white/70 dark:bg-slate-900/55 backdrop-blur-md shadow-[0_10px_30px_-18px_rgba(15,23,42,0.55)] ${className ?? ''}`.trim()}
+    >
       <CardHeader className="flex flex-row items-start justify-between px-6 pb-4">
-        <CardTitle className="font-semibold text-base text-gray-900 dark:text-white">{title}</CardTitle>
+        <CardTitle className="font-semibold text-base text-slate-900 dark:text-slate-100">{title}</CardTitle>
         {titleRight}
       </CardHeader>
       <CardContent className={`px-6 ${contentClassName ?? ''}`.trim()}>

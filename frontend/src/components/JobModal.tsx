@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Job, JobFormData, JobStatus, JobLocation, Company } from '../types'
 import { useCreateCompanyMutation } from '../hooks/useCompanies'
 import { formatLocalDateInput } from '../lib/jobFormPayload'
+import { Button } from './ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import {
   NEW_COMPANY_SENTINEL,
   jobModalSubmitSchema,
@@ -15,9 +17,9 @@ const inputErrCls =
   'border-red-500 dark:border-red-500 focus:border-red-500 focus:ring-red-500'
 
 const inputCls =
-  'w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 ' +
-  'bg-white dark:bg-gray-700 text-gray-900 dark:text-white ' +
-  'placeholder-gray-400 dark:placeholder-gray-500 ' +
+  'w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 ' +
+  'bg-white dark:bg-slate-800/60 text-gray-900 dark:text-slate-100 ' +
+  'placeholder-gray-400 dark:placeholder-slate-400 ' +
   'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm'
 
 const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
@@ -239,7 +241,7 @@ function CompanyCombobox({
       {dropdownVisible && (
         <ul
           ref={listRef}
-          className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+          className="absolute z-10 mt-1 w-full bg-white/95 dark:bg-slate-900/95 border border-gray-300 dark:border-white/10 backdrop-blur-md rounded-lg shadow-lg max-h-48 overflow-y-auto"
         >
           {filtered.map((c, i) => (
             <li
@@ -249,7 +251,7 @@ function CompanyCombobox({
                 'px-3 py-2 text-sm cursor-pointer text-gray-900 dark:text-white ' +
                 (activeIndex === i
                   ? 'bg-blue-50 dark:bg-blue-900/30'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-600')
+                  : 'hover:bg-gray-50 dark:hover:bg-white/10')
               }
             >
               {c.name}
@@ -262,7 +264,7 @@ function CompanyCombobox({
                 'px-3 py-2 text-sm cursor-pointer font-medium text-blue-600 dark:text-blue-400 ' +
                 (activeIndex === filtered.length
                   ? 'bg-blue-50 dark:bg-blue-900/30'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-600')
+                  : 'hover:bg-gray-50 dark:hover:bg-white/10')
               }
             >
               Create &ldquo;{inputValue.trim()}&rdquo;
@@ -372,12 +374,12 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
   return (
     // Backdrop
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-[2px] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-y-auto max-h-[90vh]">
-        <div className="px-6 pt-6 pb-2 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+      <div className="w-full max-w-lg bg-white/90 dark:bg-slate-900/55 rounded-2xl shadow-xl border border-white/70 dark:border-white/10 backdrop-blur-md overflow-y-auto max-h-[90vh]">
+        <div className="px-6 pt-6 pb-3 flex items-center justify-between border-b border-gray-200/80 dark:border-white/10">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">
             {job ? 'Edit Job' : 'Add Job'}
           </h2>
           <button
@@ -464,28 +466,40 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Status</label>
-              <select
-                className={inputCls}
+              <Select
                 value={form.status}
-                onChange={e => set('status', e.target.value as JobStatus)}
+                onValueChange={value => set('status', value as JobStatus)}
               >
-                {STATUSES.map(s => (
-                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                ))}
-              </select>
+                <SelectTrigger className={inputCls}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Location</label>
-              <select
-                className={inputCls}
-                value={form.location}
-                onChange={e => set('location', e.target.value as JobLocation | '')}
+              <Select
+                value={form.location || 'any'}
+                onValueChange={value => set('location', value === 'any' ? '' : (value as JobLocation))}
               >
-                <option value="">Any</option>
-                {LOCATIONS.map(l => (
-                  <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
-                ))}
-              </select>
+                <SelectTrigger className={inputCls}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  {LOCATIONS.map((l) => (
+                    <SelectItem key={l} value={l}>
+                      {l.charAt(0).toUpperCase() + l.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -529,18 +543,24 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
                 />
                 <FieldError id="job-modal-salary-high-error" message={fieldErrors.salaryHighEnd} />
               </div>
-              <select
-                className={
-                  inputCls +
-                  ' w-24 shrink-0 px-2 py-1.5 text-xs font-normal'
-                }
+              <Select
                 value={form.salaryPeriod}
-                onChange={e => set('salaryPeriod', e.target.value as JobFormData['salaryPeriod'])}
-                aria-label="Pay period"
+                onValueChange={value => set('salaryPeriod', value as JobFormData['salaryPeriod'])}
               >
-                <option value="yearly">Yearly</option>
-                <option value="hourly">Hourly</option>
-              </select>
+                <SelectTrigger
+                  className={
+                    inputCls +
+                    ' w-24 shrink-0 px-2 py-1.5 text-xs font-normal'
+                  }
+                  aria-label="Pay period"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -598,20 +618,22 @@ export default function JobModal({ job, companies, onSubmit, onClose }: Props) {
           )}
 
           <div className="flex gap-3 pt-1">
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+              variant="outline"
+              className="flex-1 border-gray-300 dark:border-white/15 text-gray-700 dark:text-slate-200 bg-white/80 dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitting}
-              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors text-sm font-semibold"
+              variant="glassPrimary"
+              className="flex-1"
             >
               {submitting ? 'Saving…' : job ? 'Save changes' : 'Add job'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

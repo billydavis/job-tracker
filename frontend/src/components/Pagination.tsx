@@ -20,16 +20,20 @@ function getPageWindow(page: number, totalPages: number): (number | '…')[] {
 }
 
 const base = 'text-sm px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
-const inactive = `${base} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600`
-const active = `${base} border-blue-600 bg-blue-600 text-white cursor-default`
+const inactive =
+  `${base} border-gray-300/90 dark:border-white/10 bg-white/90 dark:bg-slate-800/60 ` +
+  'text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/10'
+const active =
+  `${base} border-slate-800/10 dark:border-white/15 bg-slate-900/85 dark:bg-white/12 ` +
+  'text-white dark:text-slate-100 cursor-default shadow-[0_8px_20px_-14px_rgba(15,23,42,0.8)]'
 
 export default function Pagination({ page, totalPages, onPageChange, disabled }: PaginationProps) {
   const window = getPageWindow(page, totalPages)
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <button className={inactive} onClick={() => onPageChange(page - 1)} disabled={disabled || page <= 1}>
-        ← Prev
+        Prev
       </button>
 
       {window.map((entry, i) =>
@@ -50,7 +54,7 @@ export default function Pagination({ page, totalPages, onPageChange, disabled }:
       )}
 
       <button className={inactive} onClick={() => onPageChange(page + 1)} disabled={disabled || page >= totalPages}>
-        Next →
+        Next
       </button>
     </div>
   )

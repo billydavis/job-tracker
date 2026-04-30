@@ -6,6 +6,9 @@ import { useCompaniesQuery } from '../hooks/useCompanies'
 import JobModal from '../components/JobModal'
 import { jobFormToApiPayload } from '../lib/jobFormPayload'
 import ApplicationJobList from '../components/ApplicationJobList'
+import PageHeader from '../components/layouts/PageHeader'
+import { Button } from '../components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { ALL_STATUSES } from '../lib/jobApplicationUi'
 import { getListPageSize, setListPageSize } from '../lib/listPageSize'
 
@@ -53,81 +56,93 @@ export default function Jobs() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Applications</h1>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-        >
-          + Add job
-        </button>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-wrap gap-2 mb-4">
-        <div className="relative min-w-52">
-          <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-            aria-hidden
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search title…"
-            className="w-full rounded-lg border border-gray-300 bg-white py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
-          />
-        </div>
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value as JobStatus | '')}
-          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All statuses</option>
-          {ALL_STATUSES.map(s => (
-            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-          ))}
-        </select>
-        {(filterStatus || search) && (
-          <button
+    <div className="space-y-6">
+      <PageHeader
+        title="Applications"
+        description="Manage your pipeline, update statuses, and keep your search moving."
+        actions={
+          <Button
             type="button"
-            onClick={() => { setFilterStatus(''); setSearch('') }}
-            className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            onClick={openCreate}
+            variant="glassPrimary"
           >
-            Clear
-          </button>
-        )}
-      </div>
-
-      <ApplicationJobList
-        jobs={jobs}
-        companies={companies}
-        loading={loading}
-        error={error as { error?: string; message?: string } | null}
-        isFetching={isFetching}
-        emptyMessage={total === 0 && !search && !filterStatus ? 'No applications yet' : 'No applications match your filters'}
-        emptyHint={(
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            Click <strong>+ Add job</strong> to get started.
-          </p>
-        )}
-        showEmptyHint={total === 0 && !search && !filterStatus}
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={limit}
-        onPageChange={setPage}
-        onLimitChange={(n) => {
-          setListPageSize(n)
-          setLimit(n)
-          setPage(1)
-        }}
-        onStatusChange={handleStatusChange}
-        onEdit={openEdit}
-        onDelete={handleDelete}
-        deletePending={deleteJobMutation.isPending}
+            + Add Application
+          </Button>
+        }
       />
+
+      <section className="space-y-0">
+        <div className="bg-white/70 dark:bg-slate-900/55 backdrop-blur-md rounded-t-2xl rounded-b-none border border-white/70 dark:border-white/10 border-b-gray-200/70 dark:border-b-white/10 px-4 py-3 flex flex-wrap gap-2">
+          <div className="relative min-w-52">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search title…"
+              className="w-full rounded-lg border border-gray-300/90 dark:border-white/10 bg-white/90 dark:bg-slate-800/60 py-1.5 pl-9 pr-3 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <Select
+            value={filterStatus === '' ? 'all' : filterStatus}
+            onValueChange={(value) => setFilterStatus(value === 'all' ? '' : (value as JobStatus))}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {ALL_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filterStatus || search) && (
+            <button
+              type="button"
+              onClick={() => { setFilterStatus(''); setSearch('') }}
+              className="text-sm px-3 py-1.5 rounded-lg border border-gray-300/90 dark:border-white/10 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <ApplicationJobList
+          jobs={jobs}
+          companies={companies}
+          loading={loading}
+          error={error as { error?: string; message?: string } | null}
+          isFetching={isFetching}
+          emptyMessage={total === 0 && !search && !filterStatus ? 'No applications yet' : 'No applications match your filters'}
+          emptyHint={(
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+              Click <strong>+ Add job</strong> to get started.
+            </p>
+          )}
+          showEmptyHint={total === 0 && !search && !filterStatus}
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(n) => {
+            setListPageSize(n)
+            setLimit(n)
+            setPage(1)
+          }}
+          onStatusChange={handleStatusChange}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          deletePending={deleteJobMutation.isPending}
+          attachedToFilters
+        />
+      </section>
 
       {modalOpen && (
         <JobModal

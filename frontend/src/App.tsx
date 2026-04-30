@@ -5,7 +5,6 @@ import Jobs from './pages/Jobs'
 import JobDetails from './pages/JobDetails'
 import Companies from './pages/Companies'
 import CompanyDetails from './pages/CompanyDetails'
-import Analytics from './pages/Analytics'
 import Dashboard from './pages/Dashboard'
 import ProtectedRoute from './components/routes/ProtectedRoute'
 import PublicOnlyRoute from './components/routes/PublicOnlyRoute'
@@ -57,7 +56,7 @@ export default function App() {
         {/* user is guaranteed non-null inside ProtectedRoute */}
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/analytics" element={<Navigate to="/dashboard" replace />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:id" element={<CompanyDetails />} />

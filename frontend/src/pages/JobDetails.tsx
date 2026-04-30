@@ -7,6 +7,7 @@ import { useJobQuery, useJobsQuery, useUpdateJobMutation } from '../hooks/useJob
 import { useNotesQuery } from '../hooks/useNotes'
 import JobModal from '../components/JobModal'
 import NotesPanel from '../components/NotesPanel'
+import PageHeader from '../components/layouts/PageHeader'
 import { DEFAULT_PAGE_SIZE } from '../api/client'
 import { jobFormToApiPayload } from '../lib/jobFormPayload'
 import type { JobFilters, JobFormData, JobStatus } from '../types'
@@ -195,27 +196,18 @@ export default function JobDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <button
-              onClick={() => navigate('/jobs')}
-              className="mb-3 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              ← Back to applications
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{job.title}</h1>
-            {job.companyId ? (
-              <Link
-                to={`/companies/${job.companyId}`}
-                className="text-sm text-gray-500 dark:text-gray-400 mt-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                {companyName}
-              </Link>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{companyName}</p>
-            )}
-          </div>
+      <PageHeader
+        title={job.title}
+        description={companyName}
+        eyebrow={(
+          <button
+            onClick={() => navigate('/jobs')}
+            className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            ← Back to applications
+          </button>
+        )}
+        actions={(
           <div className="flex flex-col items-end gap-2">
             <div className="flex flex-wrap items-center justify-end gap-2">
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>
@@ -247,9 +239,11 @@ export default function JobDetails() {
               </button>
             </div>
           </div>
-        </div>
+        )}
+      />
 
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+      <div className="bg-white/70 dark:bg-slate-900/55 backdrop-blur-md rounded-xl border border-white/70 dark:border-white/10 p-5">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">Applied</p>
             <p className="text-gray-900 dark:text-white mt-0.5">{formatDate(job.dateApplied)}</p>

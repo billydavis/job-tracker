@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Pencil, X } from 'lucide-react'
 import type { Company, Job, JobStatus } from '../types'
 import NotesPanel from './NotesPanel'
 import ListPaginationBar from './ListPaginationBar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import {
   ALL_STATUSES,
   STATUS_STYLES,
@@ -34,6 +35,8 @@ export interface ApplicationJobListProps {
   deletePending: boolean
   /** When set, company line shows this text only (e.g. on company detail). Otherwise link to company from job. */
   companySubtitle?: string
+  /** When true, render as attached to an external filter bar surface. */
+  attachedToFilters?: boolean
 }
 
 export default function ApplicationJobList({
@@ -56,9 +59,12 @@ export default function ApplicationJobList({
   onDelete,
   deletePending,
   companySubtitle,
+  attachedToFilters = false,
 }: ApplicationJobListProps) {
+  const navigate = useNavigate()
   const companyName = (companyId?: string) =>
     companies.find((c) => c._id === companyId)?.name ?? companyId ?? '—'
+  const showFooter = total > 0 && (totalPages > 1 || onLimitChange != null)
 
   const errObj = error ?? null
   const errorMessage = errObj?.error ?? errObj?.message ?? 'Failed to load applications'
@@ -74,7 +80,17 @@ export default function ApplicationJobList({
 
       {!loading && !error && (
         <div className={isFetching ? 'opacity-60 pointer-events-none' : ''}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+          <div
+            className={`bg-white/70 dark:bg-slate-900/55 backdrop-blur-md shadow-sm border border-white/70 dark:border-white/10 divide-y divide-gray-200/70 dark:divide-white/10 ${
+              attachedToFilters
+                ? showFooter
+                  ? 'rounded-none border-t-0 border-b-0'
+                  : 'rounded-b-2xl rounded-t-none border-t-0'
+                : showFooter
+                  ? 'rounded-t-2xl rounded-b-none border-b-0'
+                  : 'rounded-2xl'
+            }`}
+          >
             {jobs.length === 0 ? (
               <div className="px-6 py-14 text-center">
                 <p className="font-medium text-gray-500 dark:text-gray-400">{emptyMessage}</p>
@@ -86,14 +102,27 @@ export default function ApplicationJobList({
                 return (
                 <div
                   key={j._id}
-                  className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+                  className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => {
+                    if (j._id) navigate(`/jobs/${j._id}`)
+                  }}
+                  onKeyDown={(e) => {
+                    if (!j._id) return
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      navigate(`/jobs/${j._id}`)
+                    }
+                  }}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           to={`/jobs/${j._id}`}
-                          className="font-medium text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-medium text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors block"
                         >
                           {j.title}
                         </Link>
@@ -115,7 +144,8 @@ export default function ApplicationJobList({
                       ) : j.companyId ? (
                         <Link
                           to={`/companies/${j.companyId}`}
-                          className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors block"
                         >
                           {companyName(j.companyId)}
                         </Link>
@@ -124,29 +154,43 @@ export default function ApplicationJobList({
                           {companyName(j.companyId)}
                         </p>
                       )}
-                      {j._id && <NotesPanel jobId={j._id} />}
+                      {j._id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          <NotesPanel jobId={j._id} />
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <div className="flex items-center gap-2">
-                        <select
+                        <Select
                           value={j.status}
-                          onChange={(e) => onStatusChange(j, e.target.value as JobStatus)}
-                          className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_STYLES[j.status]}`}
+                          onValueChange={(value) => onStatusChange(j, value as JobStatus)}
                         >
-                          {ALL_STATUSES.map((s) => (
-                            <option
-                              key={s}
-                              value={s}
-                              className="bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-                            >
-                              {s.charAt(0).toUpperCase() + s.slice(1)}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                            className={`w-[116px] rounded-full text-xs font-medium ${STATUS_STYLES[j.status]}`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent align="end">
+                            {ALL_STATUSES.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <button
                           type="button"
-                          onClick={() => onEdit(j)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onEdit(j)
+                          }}
                           className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-1"
                           title="Edit"
                         >
@@ -154,7 +198,10 @@ export default function ApplicationJobList({
                         </button>
                         <button
                           type="button"
-                          onClick={() => onDelete(j._id!)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDelete(j._id!)
+                          }}
                           disabled={deletePending}
                           className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors px-1 disabled:opacity-50"
                           title="Delete"

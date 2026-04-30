@@ -16,7 +16,10 @@ interface Props {
   setTheme: Dispatch<SetStateAction<'light' | 'dark'>>
 }
 
-const triggerClass = 'p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer'
+const triggerClass =
+  'p-2 rounded-xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-white/5 ' +
+  'text-slate-600 dark:text-slate-300 hover:bg-white/90 dark:hover:bg-white/10 ' +
+  'backdrop-blur-md transition-colors cursor-pointer'
 
 export default function AppLayout({ theme, setTheme }: Props) {
   const { data: user } = useMeQuery()
@@ -29,8 +32,8 @@ export default function AppLayout({ theme, setTheme }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-6 py-3 flex items-center gap-3">
+    <div className="min-h-screen bg-linear-to-b from-slate-200 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-200">
+      <header className="sticky top-0 z-30 px-4 sm:px-6 py-3 flex items-center gap-3 border-b border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-[0_8px_24px_-20px_rgba(15,23,42,0.7)]">
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass} aria-label="Navigation menu">
             <Menu className="size-5" />
@@ -41,12 +44,6 @@ export default function AppLayout({ theme, setTheme }: Props) {
               className={location.pathname === '/dashboard' ? 'font-medium text-gray-900 dark:text-white' : ''}
             >
               Dashboard
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigate('/analytics')}
-              className={location.pathname === '/analytics' ? 'font-medium text-gray-900 dark:text-white' : ''}
-            >
-              Analytics
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => navigate('/jobs')}
@@ -68,7 +65,7 @@ export default function AppLayout({ theme, setTheme }: Props) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <span className="font-semibold text-gray-900 dark:text-white text-lg tracking-tight">Job Tracker</span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100 text-lg tracking-tight">Job Tracker</span>
 
         <div className="ml-auto">
           <DropdownMenu>
@@ -92,7 +89,7 @@ export default function AppLayout({ theme, setTheme }: Props) {
           </DropdownMenu>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto px-4 py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
         <Outlet />
       </main>
     </div>

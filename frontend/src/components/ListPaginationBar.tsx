@@ -1,12 +1,8 @@
 import Pagination from './Pagination'
 import { LIST_PAGE_SIZE_OPTIONS } from '../lib/listPageSize'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
-const selectCls =
-  'text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 ' +
-  'bg-white dark:bg-gray-700 text-gray-900 dark:text-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-blue-500'
-
-const muted = 'text-sm text-gray-400 dark:text-gray-500 min-w-0'
+const muted = 'text-sm text-gray-500 dark:text-slate-400 min-w-0'
 
 export interface ListPaginationBarProps {
   page: number
@@ -32,7 +28,7 @@ export default function ListPaginationBar({
   if (!showBar) return null
 
   const showingText = (
-    <p className={muted}>
+    <p className={`${muted} tabular-nums`}>
       Showing {Math.min((page - 1) * limit + 1, total)}–{Math.min(page * limit, total)} of {total}
     </p>
   )
@@ -49,34 +45,61 @@ export default function ListPaginationBar({
 
   const perPage =
     onLimitChange != null ? (
-      <label className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 shrink-0">
+      <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300 shrink-0">
         <span className="whitespace-nowrap">Per page</span>
-        <select
-          value={limit}
-          onChange={(e) => {
-            onLimitChange(Number(e.target.value))
-          }}
+        <Select
+          value={String(limit)}
+          onValueChange={(value) => onLimitChange(Number(value))}
           disabled={disabled}
-          className={selectCls}
         >
-          {LIST_PAGE_SIZE_OPTIONS.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger size="sm" className="w-[72px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {LIST_PAGE_SIZE_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
     ) : null
 
   return (
-    <div className="mt-4 w-full">
-      <div className="hidden w-full grid-cols-[1fr_auto_1fr] items-center gap-x-4 sm:grid">
-        <div className="flex min-w-0 justify-start">{showingText}</div>
-        <div className="flex justify-center">{pageControls}</div>
-        <div className="flex min-w-0 justify-end">{perPage}</div>
-      </div>
-      <div className="flex w-full justify-center sm:hidden">
-        {pageControls ?? perPage}
+    <div className="w-full">
+      <div className="rounded-b-2xl rounded-t-none border border-white/70 dark:border-white/10 border-t border-t-gray-200/70 dark:border-t-white/10 bg-white/70 dark:bg-slate-900/55 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-2.5">
+        <div className="hidden w-full grid-cols-[1fr_auto_1fr] items-center gap-x-4 sm:grid">
+          <div className="flex min-w-0 justify-start">{showingText}</div>
+          <div className="flex items-center justify-center gap-3">
+            {pageControls}
+            {totalPages > 1 ? (
+              <span className="text-xs text-gray-500 dark:text-slate-400 tabular-nums">
+                Page {page} of {totalPages}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex min-w-0 justify-end">{perPage}</div>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <p className={`${muted} tabular-nums text-xs`}>
+              {Math.min((page - 1) * limit + 1, total)}–{Math.min(page * limit, total)} of {total}
+            </p>
+            {totalPages > 1 ? (
+              <span className="text-xs text-gray-500 dark:text-slate-400 tabular-nums">
+                {page}/{totalPages}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex w-full justify-center">
+            {pageControls ?? perPage}
+          </div>
+          {pageControls && perPage ? (
+            <div className="flex w-full justify-center">{perPage}</div>
+          ) : null}
+        </div>
       </div>
     </div>
   )
