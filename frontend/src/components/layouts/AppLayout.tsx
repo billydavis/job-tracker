@@ -37,6 +37,12 @@ export default function AppLayout({ theme, setTheme }: Props) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem
+              onClick={() => navigate('/dashboard')}
+              className={location.pathname === '/dashboard' ? 'font-medium text-gray-900 dark:text-white' : ''}
+            >
+              Dashboard
+            </DropdownMenuItem>
+            <DropdownMenuItem
               onClick={() => navigate('/analytics')}
               className={location.pathname === '/analytics' ? 'font-medium text-gray-900 dark:text-white' : ''}
             >

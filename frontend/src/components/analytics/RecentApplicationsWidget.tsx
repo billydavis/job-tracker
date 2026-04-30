@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import type { JobStats } from '../../types'
+import AnalyticsCard from './AnalyticsCard'
 
 interface Props {
   data: JobStats['recentApplications'] | undefined
@@ -16,17 +17,18 @@ function formatDate(d: string) {
 
 export default function RecentApplicationsWidget({ data, isLoading }: Props) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 md:col-span-2">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-base text-gray-900 dark:text-white">Recent Applications</h2>
+    <AnalyticsCard
+      title="Recent Applications"
+      className="h-full md:col-span-2"
+      titleRight={
         <Link
           to="/jobs"
           className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
         >
           View all applications <ArrowRight className="w-3.5 h-3.5" />
         </Link>
-      </div>
-      <div>
+      }
+    >
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -71,7 +73,6 @@ export default function RecentApplicationsWidget({ data, isLoading }: Props) {
             ))}
           </ul>
         )}
-      </div>
-    </div>
+    </AnalyticsCard>
   )
 }

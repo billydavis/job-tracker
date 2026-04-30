@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useChartColors } from '../../hooks/useChartColors'
 import type { JobStats } from '../../types'
+import AnalyticsCard from './AnalyticsCard'
 
 const LOCATION_COLORS: Record<string, string> = {
   'on-site': '#3b82f6',
@@ -61,8 +62,7 @@ export default function LocationDistributionChart({ data, isLoading }: Props) {
   }))
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h2 className="font-semibold text-base text-gray-900 dark:text-white mb-4">Applications by Location</h2>
+    <AnalyticsCard title="Applications by Location">
       {isLoading ? (
         <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />
       ) : chartData.length === 0 ? (
@@ -102,6 +102,6 @@ export default function LocationDistributionChart({ data, isLoading }: Props) {
           </BarChart>
         </ResponsiveContainer>
       )}
-    </div>
+    </AnalyticsCard>
   )
 }

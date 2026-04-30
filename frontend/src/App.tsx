@@ -6,6 +6,7 @@ import JobDetails from './pages/JobDetails'
 import Companies from './pages/Companies'
 import CompanyDetails from './pages/CompanyDetails'
 import Analytics from './pages/Analytics'
+import Dashboard from './pages/Dashboard'
 import ProtectedRoute from './components/routes/ProtectedRoute'
 import PublicOnlyRoute from './components/routes/PublicOnlyRoute'
 import AuthLayout from './components/layouts/AuthLayout'
@@ -34,7 +35,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={user ? '/analytics' : '/login'} replace />} />
+      <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
 
       <Route
         element={
@@ -55,14 +56,14 @@ export default function App() {
       >
         {/* user is guaranteed non-null inside ProtectedRoute */}
         <Route path="/jobs" element={<Jobs />} />
-        <Route path="/dashboard" element={<Navigate to="/jobs" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:id" element={<CompanyDetails />} />
       </Route>
 
-      <Route path="*" element={<Navigate to={user ? '/analytics' : '/login'} replace />} />
+      <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
     </Routes>
   )
 }

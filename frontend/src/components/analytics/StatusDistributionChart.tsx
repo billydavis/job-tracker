@@ -1,6 +1,7 @@
 import { Treemap, Tooltip, ResponsiveContainer } from 'recharts'
 import { useChartColors } from '../../hooks/useChartColors'
 import type { JobStats } from '../../types'
+import AnalyticsCard from './AnalyticsCard'
 
 const STATUS_COLORS: Record<string, string> = {
   waiting: '#9ca3af',
@@ -85,8 +86,7 @@ export default function StatusDistributionChart({ data, isLoading }: Props) {
     .map(d => ({ name: STATUS_LABELS[d.status] ?? d.status, value: d.count, status: d.status }))
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h2 className="font-semibold text-base text-gray-900 dark:text-white mb-4">Applications by Status</h2>
+    <AnalyticsCard title="Applications by Status">
       {isLoading ? (
         <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />
       ) : chartData.length === 0 ? (
@@ -104,6 +104,6 @@ export default function StatusDistributionChart({ data, isLoading }: Props) {
           </Treemap>
         </ResponsiveContainer>
       )}
-    </div>
+    </AnalyticsCard>
   )
 }

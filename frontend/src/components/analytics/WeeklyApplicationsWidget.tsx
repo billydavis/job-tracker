@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { JobStats } from '../../types'
+import AnalyticsCard from './AnalyticsCard'
 
 interface Props {
   data: JobStats['weeklyApplied'] | undefined
@@ -28,9 +29,10 @@ export default function WeeklyApplicationsWidget({ data, isLoading, weekOffset, 
   const delta = data ? deltaLabel(data.count, data.previousCount) : null
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 md:col-span-2">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-base text-gray-900 dark:text-white">Weekly Applications</h2>
+    <AnalyticsCard
+      title="Weekly Applications"
+      className="md:col-span-2"
+      titleRight={
         <div className="flex items-center gap-1">
           <button
             onClick={() => onWeekChange(weekOffset - 1)}
@@ -56,7 +58,8 @@ export default function WeeklyApplicationsWidget({ data, isLoading, weekOffset, 
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      }
+    >
       {isLoading ? (
         <div className="space-y-2">
           <div className="h-4 w-40 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
@@ -82,6 +85,6 @@ export default function WeeklyApplicationsWidget({ data, isLoading, weekOffset, 
           </p>
         </div>
       ) : null}
-    </div>
+    </AnalyticsCard>
   )
 }
