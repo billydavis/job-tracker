@@ -1,19 +1,48 @@
 import { useState, type FormEvent } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useLoginMutation, useRegisterMutation } from '../hooks/useAuth'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
-const inputCls = [
-  'w-full px-3 py-2 rounded-lg border',
-  'border-gray-300 dark:border-gray-600',
-  'bg-white dark:bg-gray-700',
-  'text-gray-900 dark:text-white',
-  'placeholder-gray-400 dark:placeholder-gray-500',
-  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-  'transition-colors',
-].join(' ')
+const authInputClass =
+  'auth-input border-slate-300/90 bg-white/80 text-slate-900 placeholder:text-slate-500 ' +
+  'focus-visible:border-slate-400/80 focus-visible:ring-2 focus-visible:ring-slate-300/45 ' +
+  'dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400 ' +
+  'dark:focus-visible:border-white/25 dark:focus-visible:ring-white/20'
 
 interface PasswordStrength {
   label: 'Weak' | 'Medium' | 'Strong'
   color: string
+}
+
+function getFriendlyAuthError(error: unknown, isRegister: boolean): string {
+  const e = error as { error?: string; message?: string }
+  const raw = (e?.error ?? e?.message ?? '').trim()
+  const normalized = raw.toLowerCase()
+
+  if (!isRegister) {
+    const looksLikeCredentialError =
+      normalized.includes('invalid credentials') ||
+      normalized.includes('invalid email or password') ||
+      normalized.includes('incorrect password') ||
+      normalized.includes('wrong password') ||
+      normalized.includes('user not found') ||
+      normalized.includes('unauthorized')
+
+    if (looksLikeCredentialError) {
+      return 'Invalid email or password. Please try again.'
+    }
+  }
+
+  return raw || 'Request failed'
 }
 
 function getPasswordStrength(value: string): PasswordStrength {
@@ -34,6 +63,8 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [name, setName] = useState('')
   const [isRegister, setIsRegister] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const loginMutation = useLoginMutation()
   const registerMutation = useRegisterMutation()
@@ -63,44 +94,85 @@ export default function Login() {
         await loginMutation.mutateAsync({ email, password })
       }
     } catch (err) {
-      const e = err as { error?: string; message?: string }
-      setError(e?.error ?? e?.message ?? 'Request failed')
+      setError(getFriendlyAuthError(err, isRegister))
     }
   }
 
   const submitting = loginMutation.isPending || registerMutation.isPending
 
   return (
-    <div className="flex justify-center pt-12">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-700">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-          {isRegister ? 'Create account' : 'Sign in'}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          {isRegister ? 'Start tracking your applications.' : 'Welcome back.'}
-        </p>
+    <div className="mx-auto flex w-full max-w-md justify-center pt-8 md:pt-12">
+      <Card className="w-full gap-0 rounded-2xl border-white/70 bg-white/70 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.5)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/55">
+        <CardHeader className="space-y-1 pb-4">
+          <CardTitle className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            {isRegister ? 'Create account' : 'Sign in'}
+          </CardTitle>
+          <CardDescription className="text-slate-600 dark:text-slate-300">
+            {isRegister ? 'Start tracking your applications.' : 'Welcome back.'}
+          </CardDescription>
+        </CardHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-              <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith" required />
+        <CardContent className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {isRegister && (
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-slate-700 dark:text-slate-200">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  className={authInputClass}
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Jane Smith"
+                  required
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                className={authInputClass}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
             </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-            <input type="email" className={inputCls} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-            <input type="password" className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-slate-700 dark:text-slate-200">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  className={`${authInputClass} pr-10`}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
             {showPasswordChecks && (
               <div className="mt-2">
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <span>Password strength</span>
                   <span className="font-medium">{passwordStrength.label}</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                   <div
                     className={`h-full ${passwordStrength.color} transition-all`}
                     style={{ width: `${(Math.min(password.length, 12) / 12) * 100}%` }}
@@ -108,46 +180,62 @@ export default function Login() {
                 </div>
               </div>
             )}
-          </div>
-          {isRegister && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm password</label>
-              <input
-                type="password"
-                className={inputCls}
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
             </div>
-          )}
+            {isRegister && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-slate-700 dark:text-slate-200">
+                  Confirm password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className={`${authInputClass} pr-10`}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(v => !v)}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-100"
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
 
-          {error && (
-            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-3 py-2">
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="rounded-lg border border-red-200/90 bg-red-50/80 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
+                {error}
+              </div>
+            )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors mt-2"
-          >
-            {submitting ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}
-          </button>
-        </form>
+            <Button
+              type="submit"
+              disabled={submitting}
+              variant="glassPrimary"
+              className="mt-2 h-10 w-full rounded-lg"
+            >
+              {submitting ? 'Please wait...' : isRegister ? 'Create account' : 'Sign in'}
+            </Button>
+          </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
-          {isRegister ? 'Already have an account? ' : "Don't have an account? "}
-          <button
-            onClick={() => { setIsRegister(s => !s); setError(null) }}
-            className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
-          >
-            {isRegister ? 'Sign in' : 'Register'}
-          </button>
-        </p>
-      </div>
+          <p className="text-center text-sm text-slate-600 dark:text-slate-300">
+            {isRegister ? 'Already have an account? ' : "Don't have an account? "}
+            <button
+              type="button"
+              onClick={() => { setIsRegister(s => !s); setError(null) }}
+              className="font-medium text-slate-800 underline-offset-4 hover:underline dark:text-slate-100"
+            >
+              {isRegister ? 'Sign in' : 'Register'}
+            </button>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

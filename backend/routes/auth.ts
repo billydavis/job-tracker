@@ -70,10 +70,10 @@ authRouter.post('/login', async c => {
 
   const users = await getCollection('users');
   const userDoc = await users.findOne({ email: parsed.data.email } as any);
-  if (!userDoc) return c.json({ error: 'invalid credentials' }, 401);
+  if (!userDoc) return c.json({ error: 'Invalid email or password. Please try again.' }, 401);
 
   const ok = await bcrypt.compare(parsed.data.password, userDoc.passwordHash ?? '');
-  if (!ok) return c.json({ error: 'invalid credentials' }, 401);
+  if (!ok) return c.json({ error: 'Invalid email or password. Please try again.' }, 401);
 
   const { passwordHash, ...safe } = userDoc as any;
   const token = makeToken({ id: userDoc._id.toString(), email: userDoc.email });
