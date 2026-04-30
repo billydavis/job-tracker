@@ -1,7 +1,4 @@
-@import "tailwindcss";
-
-/* Class-based dark mode: toggle .dark on <html> to switch themes */
-@custom-variant dark (&:where(.dark, .dark *));
+@import "../styles/globals.css";
 
 /* Date input calendar icon visibility in dark mode (Windows/WebKit). */
 .dark input[type="date"]::-webkit-calendar-picker-indicator {

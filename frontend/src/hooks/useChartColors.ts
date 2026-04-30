@@ -7,22 +7,14 @@ interface ChartColors {
   cardBorder: string
 }
 
-const LIGHT: ChartColors = {
-  foreground: '#111827',
-  mutedForeground: '#6b7280',
-  cardBackground: '#ffffff',
-  cardBorder: '#e5e7eb',
-}
-
-const DARK: ChartColors = {
-  foreground: '#f9fafb',
-  mutedForeground: '#9ca3af',
-  cardBackground: '#1f2937',
-  cardBorder: '#374151',
-}
-
 function read(): ChartColors {
-  return document.documentElement.classList.contains('dark') ? DARK : LIGHT
+  const rootStyle = getComputedStyle(document.documentElement)
+  return {
+    foreground: `oklch(${rootStyle.getPropertyValue('--foreground').trim()})`,
+    mutedForeground: `oklch(${rootStyle.getPropertyValue('--muted-foreground').trim()})`,
+    cardBackground: `oklch(${rootStyle.getPropertyValue('--card').trim()})`,
+    cardBorder: `oklch(${rootStyle.getPropertyValue('--border').trim()})`,
+  }
 }
 
 export function useChartColors(): ChartColors {

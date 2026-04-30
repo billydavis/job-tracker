@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import MDEditor from '@uiw/react-md-editor'
 import { Pencil } from 'lucide-react'
+import { Button } from '../components/ui/button'
 import { useCompaniesQuery } from '../hooks/useCompanies'
 import { useJobQuery, useJobsQuery, useUpdateJobMutation } from '../hooks/useJobs'
 import { useNotesQuery } from '../hooks/useNotes'
@@ -14,7 +15,7 @@ import type { JobFilters, JobFormData, JobStatus } from '../types'
 import { formatJobSalary } from '../lib/formatJobSalary'
 
 const STATUS_STYLES: Record<JobStatus, string> = {
-  waiting: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  waiting: 'bg-slate-100 text-slate-700 dark:bg-slate-700/70 dark:text-slate-200',
   applied: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   interview: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
   offer: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -177,19 +178,22 @@ export default function JobDetails() {
   }, [isEditingDescription, descriptionDraft, job?._id])
 
   if (isLoading) {
-    return <div className="text-gray-400 dark:text-gray-500">Loading job…</div>
+    return <div className="text-slate-400 dark:text-slate-500">Loading job…</div>
   }
 
   if (error || !job) {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-600 dark:text-red-400">Could not load this job.</p>
-        <button
+        <Button
+          type="button"
           onClick={() => navigate('/jobs')}
-          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          variant="outline"
+          size="sm"
+          className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
         >
           Back to applications
-        </button>
+        </Button>
       </div>
     )
   }
@@ -200,12 +204,15 @@ export default function JobDetails() {
         title={job.title}
         description={companyName}
         eyebrow={(
-          <button
+          <Button
+            type="button"
             onClick={() => navigate('/jobs')}
-            className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            variant="ghost"
+            size="sm"
+            className="h-auto px-0 text-sm text-slate-500 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
           >
             ← Back to applications
-          </button>
+          </Button>
         )}
         actions={(
           <div className="flex flex-col items-end gap-2">
@@ -213,30 +220,38 @@ export default function JobDetails() {
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>
                 {job.status}
               </span>
-              <button
+              <Button
                 type="button"
                 onClick={() => setEditModalOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 rounded-lg border-slate-300/90 bg-white/80 px-2.5 text-xs text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
               >
                 <Pencil className="size-3.5 shrink-0" aria-hidden />
                 Edit job
-              </button>
+              </Button>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                type="button"
                 onClick={() => previousJob && navigate(`/jobs/${previousJob._id}`)}
                 disabled={!previousJob}
-                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                variant="outline"
+                size="sm"
+                className="h-7 rounded-md border-slate-300/90 bg-white/80 px-2 text-xs text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
               >
                 Prev
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
                 onClick={() => nextJob && navigate(`/jobs/${nextJob._id}`)}
                 disabled={!nextJob}
-                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                variant="outline"
+                size="sm"
+                className="h-7 rounded-md border-slate-300/90 bg-white/80 px-2 text-xs text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -244,24 +259,24 @@ export default function JobDetails() {
 
       <div className="bg-white/70 dark:bg-slate-900/55 backdrop-blur-md rounded-xl border border-white/70 dark:border-white/10 p-5">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Applied</p>
-            <p className="text-gray-900 dark:text-white mt-0.5">{formatDate(job.dateApplied)}</p>
+          <div className="rounded-lg border border-slate-200/80 dark:border-white/10 px-3 py-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Applied</p>
+            <p className="mt-0.5 text-slate-900 dark:text-slate-100">{formatDate(job.dateApplied)}</p>
           </div>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Location</p>
-            <p className="text-gray-900 dark:text-white mt-0.5">{job.location ?? 'Not set'}</p>
+          <div className="rounded-lg border border-slate-200/80 dark:border-white/10 px-3 py-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Location</p>
+            <p className="mt-0.5 text-slate-900 dark:text-slate-100">{job.location ?? 'Not set'}</p>
           </div>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Salary</p>
-            <p className="text-gray-900 dark:text-white mt-0.5">{formatJobSalary(job) ?? 'Not set'}</p>
+          <div className="rounded-lg border border-slate-200/80 dark:border-white/10 px-3 py-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Salary</p>
+            <p className="mt-0.5 text-slate-900 dark:text-slate-100">{formatJobSalary(job) ?? 'Not set'}</p>
           </div>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Contact</p>
-            <p className="text-gray-900 dark:text-white mt-0.5">{job.contact ?? 'Not set'}</p>
+          <div className="rounded-lg border border-slate-200/80 dark:border-white/10 px-3 py-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Contact</p>
+            <p className="mt-0.5 text-slate-900 dark:text-slate-100">{job.contact ?? 'Not set'}</p>
           </div>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Posting</p>
+          <div className="rounded-lg border border-slate-200/80 dark:border-white/10 px-3 py-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Posting</p>
             {job.url ? (
               <a
                 href={job.url}
@@ -272,22 +287,25 @@ export default function JobDetails() {
                 Open ↗
               </a>
             ) : (
-              <p className="text-gray-900 dark:text-white mt-0.5">Not set</p>
+              <p className="mt-0.5 text-slate-900 dark:text-slate-100">Not set</p>
             )}
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <div className="md:col-span-2 rounded-xl border border-white/70 bg-white/70 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/55">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Description</h2>
-            <button
+            <h2 className="font-semibold text-slate-900 dark:text-slate-100">Description</h2>
+            <Button
+              type="button"
               onClick={beginDescriptionEdit}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              variant="ghost"
+              size="sm"
+              className="h-auto px-0 text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
               Edit
-            </button>
+            </Button>
           </div>
 
           <div className="min-h-40" data-color-mode={markdownColorMode}>
@@ -298,26 +316,26 @@ export default function JobDetails() {
                 className="bg-transparent! text-sm text-slate-800 dark:text-slate-200 **:text-slate-800 dark:**:text-slate-200"
               />
             ) : (
-              <p className="text-sm text-gray-600 dark:text-gray-300">No additional details yet.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">No additional details yet.</p>
             )}
           </div>
         </div>
 
-        <div className="md:col-span-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Notes</h2>
+        <div className="md:col-span-1 rounded-xl border border-white/70 bg-white/70 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/55">
+          <h2 className="mb-2 font-semibold text-slate-900 dark:text-slate-100">Notes</h2>
           <NotesPanel jobId={job._id ?? id} defaultOpen />
 
-          <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Activity</h3>
+          <div className="mt-5 border-t border-slate-200/80 pt-4 dark:border-white/10">
+            <h3 className="mb-2 font-semibold text-slate-900 dark:text-slate-100">Activity</h3>
             <div className="space-y-2">
               {timelineItems.length === 0 ? (
-                <p className="text-xs text-gray-500 dark:text-gray-400">No activity yet.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">No activity yet.</p>
               ) : timelineItems.map(item => (
-                <div key={item.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                <div key={item.id} className="rounded-lg border border-slate-200/80 p-2 dark:border-white/10">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {item.label} · {formatDate(Number.isFinite(item.timestamp) ? new Date(item.timestamp).toISOString() : undefined)}
                   </p>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 whitespace-pre-wrap">{item.detail}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-xs text-slate-700 dark:text-slate-300">{item.detail}</p>
                 </div>
               ))}
             </div>
@@ -344,26 +362,32 @@ export default function JobDetails() {
             }
           }}
         >
-          <div className="mx-auto h-full max-w-6xl rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl flex flex-col">
-            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
-              <h2 className="font-semibold text-gray-900 dark:text-white">Edit Description</h2>
+          <div className="mx-auto flex h-full max-w-6xl flex-col rounded-2xl border border-white/70 bg-white/85 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/75">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/10">
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100">Edit Description</h2>
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  type="button"
                   onClick={() => {
                     setIsEditingDescription(false)
                     setDescriptionError(null)
                   }}
-                  className="text-xs px-2.5 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-md border-slate-300/90 bg-white/80 px-2.5 text-xs text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  type="button"
                   onClick={saveDescription}
                   disabled={updateJobMutation.isPending}
-                  className="text-xs px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white"
+                  variant="glassPrimary"
+                  size="sm"
+                  className="px-2.5 text-xs"
                 >
-                  {updateJobMutation.isPending ? 'Saving…' : 'Save'}
-                </button>
+                  {updateJobMutation.isPending ? 'Saving...' : 'Save'}
+                </Button>
               </div>
             </div>
 

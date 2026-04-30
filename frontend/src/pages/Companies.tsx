@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ExternalLink, Search } from 'lucide-react'
 import ListPaginationBar from '../components/ListPaginationBar'
 import PageHeader from '../components/layouts/PageHeader'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
 import { useCompaniesListQuery } from '../hooks/useCompanies'
 import { getListPageSize, setListPageSize } from '../lib/listPageSize'
 import type { CompanyFilters } from '../types'
@@ -40,25 +42,27 @@ export default function Companies() {
         <div className="bg-white/70 dark:bg-slate-900/55 backdrop-blur-md rounded-t-2xl rounded-b-none border border-white/70 dark:border-white/10 border-b-gray-200/70 dark:border-b-white/10 px-4 py-3 flex flex-wrap gap-2">
           <div className="relative min-w-52">
             <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
               aria-hidden
             />
-            <input
+            <Input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name or website…"
-              className="w-full rounded-lg border border-gray-300/90 dark:border-white/10 bg-white/90 dark:bg-slate-800/60 py-1.5 pl-9 pr-3 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-9 rounded-lg border-slate-300/90 bg-white/90 py-1.5 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-400"
             />
           </div>
           {search && (
-            <button
+            <Button
               type="button"
               onClick={() => setSearch('')}
-              className="text-sm px-3 py-1.5 rounded-lg border border-gray-300/90 dark:border-white/10 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+              variant="outline"
+              size="sm"
+              className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
             >
               Clear
-            </button>
+            </Button>
           )}
         </div>
 

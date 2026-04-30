@@ -6,6 +6,7 @@ import ApplicationJobList from '../components/ApplicationJobList'
 import JobModal from '../components/JobModal'
 import PageHeader from '../components/layouts/PageHeader'
 import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
 import { jobFormToApiPayload } from '../lib/jobFormPayload'
 import {
   companiesQueryKey,
@@ -175,20 +176,22 @@ export default function CompanyDetails() {
   }
 
   if (companyLoading) {
-    return <div className="text-gray-400 dark:text-gray-500">Loading company…</div>
+    return <div className="text-slate-400 dark:text-slate-500">Loading company…</div>
   }
 
   if (companyError || !company) {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-600 dark:text-red-400">Could not load this company.</p>
-        <button
+        <Button
           type="button"
           onClick={() => navigate('/jobs')}
-          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          variant="outline"
+          size="sm"
+          className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
         >
           Back to applications
-        </button>
+        </Button>
       </div>
     )
   }
@@ -204,13 +207,15 @@ export default function CompanyDetails() {
         }
         eyebrow={
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <button
+            <Button
               type="button"
               onClick={() => navigate(-1)}
-              className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              variant="ghost"
+              size="sm"
+              className="h-auto px-0 text-sm text-slate-500 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
             >
               ← Back
-            </button>
+            </Button>
             <Link
               to="/companies"
               className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -223,14 +228,16 @@ export default function CompanyDetails() {
           <div className="flex flex-wrap items-center gap-2">
             {isEditingDetails ? (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={cancelEditCompanyDetails}
                   disabled={updateCompanyMutation.isPending}
-                  className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                 >
                   Cancel
-                </button>
+                </Button>
                 <Button
                   type="button"
                   onClick={() => void saveCompanyDetails()}
@@ -238,27 +245,26 @@ export default function CompanyDetails() {
                   variant="glassPrimary"
                   size="sm"
                 >
-                  {updateCompanyMutation.isPending ? 'Saving…' : 'Save'}
+                  {updateCompanyMutation.isPending ? 'Saving...' : 'Save'}
                 </Button>
               </>
             ) : (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={beginEditCompanyDetails}
-                  className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border-slate-300/90 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
                 >
                   Edit details
-                </button>
+                </Button>
                 {company.website ? (
-                  <a
-                    href={company.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Visit website ↗
-                  </a>
+                  <Button asChild variant="outline" size="sm" className="rounded-lg border-slate-300/90 bg-white/80 text-blue-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-blue-400 dark:hover:bg-white/10">
+                    <a href={company.website} target="_blank" rel="noreferrer">
+                      Visit website ↗
+                    </a>
+                  </Button>
                 ) : null}
               </>
             )}
@@ -268,10 +274,10 @@ export default function CompanyDetails() {
 
       <div className="bg-white/70 dark:bg-slate-900/55 backdrop-blur-md rounded-xl border border-white/70 dark:border-white/10 p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Website</p>
+          <div className="rounded-lg border border-slate-200/80 px-3 py-2 dark:border-white/10">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Website</p>
             {isEditingDetails ? (
-              <input
+              <Input
                 type="text"
                 inputMode="url"
                 autoComplete="off"
@@ -280,22 +286,22 @@ export default function CompanyDetails() {
                   setDetailsForm((f) => ({ ...f, website: e.target.value }))
                 }
                 placeholder="https://example.com (leave empty to remove)"
-                className="mt-1.5 w-full text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1.5 h-9 rounded-lg border-slate-300/90 bg-white/90 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-400"
               />
             ) : (
-              <p className="text-gray-900 dark:text-white mt-0.5 break-all">
+              <p className="mt-0.5 break-all text-slate-900 dark:text-slate-100">
                 {company.website || 'Not set'}
               </p>
             )}
           </div>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Created</p>
-            <p className="text-gray-900 dark:text-white mt-0.5">{formatDate(company.createdAt)}</p>
+          <div className="rounded-lg border border-slate-200/80 px-3 py-2 dark:border-white/10">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Created</p>
+            <p className="mt-0.5 text-slate-900 dark:text-slate-100">{formatDate(company.createdAt)}</p>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Description</p>
+        <div className="mt-4 border-t border-slate-200/80 pt-4 dark:border-white/10">
+          <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Description</p>
           {isEditingDetails ? (
             <div data-color-mode={markdownColorMode} className="min-w-0">
               <MDEditor
@@ -312,7 +318,7 @@ export default function CompanyDetails() {
           ) : (
             <div
               data-color-mode={markdownColorMode}
-              className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 px-3 py-2"
+              className="max-h-72 overflow-y-auto rounded-lg border border-slate-200/80 bg-slate-50/80 px-3 py-2 dark:border-white/10 dark:bg-slate-900/35"
             >
               {company.description ? (
                 <MDEditor.Markdown
@@ -320,7 +326,7 @@ export default function CompanyDetails() {
                   className="bg-transparent! text-sm text-slate-800 dark:text-slate-200 **:text-slate-800 dark:**:text-slate-200"
                 />
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No description yet.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">No description yet.</p>
               )}
             </div>
           )}
@@ -332,7 +338,7 @@ export default function CompanyDetails() {
       </div>
 
       <div className="min-w-0">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Applications</h2>
+        <h2 className="mb-4 text-xl font-bold text-slate-900 dark:text-slate-100">Applications</h2>
         <ApplicationJobList
           jobs={companyJobs}
           companies={companies}
