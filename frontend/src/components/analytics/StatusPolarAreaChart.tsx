@@ -1,12 +1,4 @@
-import {
-  Cell,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  RadialBar,
-  RadialBarChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts'
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import type { JobStats } from '../../types'
 import AnalyticsCard from './AnalyticsCard'
 
@@ -30,6 +22,12 @@ const STATUS_COLORS: Record<string, string> = {
   ghosted: '#71717a',
 }
 
+/** Inner hole and outer cap as % of chart radius (matches prior donut-ish proportions). */
+const INNER_PCT = 14
+const OUTER_PCT = 88
+const RADIUS_LO = 16
+const RADIUS_HI = 88
+
 interface Props {
   data: JobStats['statusCounts'] | undefined
   isLoading: boolean
@@ -37,12 +35,13 @@ interface Props {
 
 interface ChartDatum {
   name: string
-  value: number
+  /** Drives slice angle; equal for all rows so each status gets the same arc width. */
+  sliceUnit: number
+  count: number
   status: string
 }
 
 interface TooltipPayloadRow {
-  /** For RadialBar this is often the dataKey string (e.g. "value"), not the category label */
   name?: string
   value?: number
   payload?: ChartDatum
@@ -52,8 +51,8 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Toolti
   if (!active || !payload?.length) return null
   const row = payload[0]
   const point = row.payload
-  const name = point?.name
-  const value = point?.value ?? row.value
+  const name = point?.name ?? row.name
+  const value = point?.count ?? row.value
   if (name === undefined || value === undefined) return null
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[13px] text-popover-foreground shadow-md">
@@ -66,14 +65,22 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Toolti
 }
 
 export default function StatusPolarAreaChart({ data, isLoading }: Props) {
-  const chartData = (data ?? [])
+  const chartData: ChartDatum[] = (data ?? [])
     .filter((item) => item.count > 0)
     .map((item) => ({
       name: STATUS_LABELS[item.status] ?? item.status,
-      value: item.count,
+      sliceUnit: 1,
+      count: item.count,
       status: item.status,
     }))
-  const total = chartData.reduce((sum, row) => sum + row.value, 0)
+  const total = chartData.reduce((sum, row) => sum + row.count, 0)
+  const radiusMax = Math.max(...chartData.map((d) => d.count), 1)
+
+  const outerRadiusForCount = (count: number) => {
+    const t = radiusMax > 0 ? count / radiusMax : 0
+    const pct = RADIUS_LO + t * (RADIUS_HI - RADIUS_LO)
+    return `${pct}%`
+  }
 
   return (
     <AnalyticsCard
@@ -91,29 +98,40 @@ export default function StatusPolarAreaChart({ data, isLoading }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_150px] gap-3 items-center">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart
-                cx="50%"
-                cy="50%"
-                innerRadius="12%"
-                outerRadius="92%"
-                data={chartData}
-                startAngle={90}
-                endAngle={-270}
-              >
-                <PolarAngleAxis type="category" dataKey="name" tick={false} axisLine={false} />
-                <PolarRadiusAxis angle={90} domain={[0, 'auto']} tick={false} axisLine={false} />
-                <RadialBar
-                  dataKey="value"
+              <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                {/* Full-length muted wedges behind (polar “track”) */}
+                <Pie
+                  data={chartData}
+                  dataKey="sliceUnit"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={`${INNER_PCT}%`}
+                  outerRadius={`${OUTER_PCT}%`}
+                  paddingAngle={2}
                   cornerRadius={4}
-                  clockWise
-                  background={{ fill: 'var(--muted)' }}
+                  stroke="none"
+                  fill="var(--muted)"
+                  isAnimationActive={false}
+                />
+                <Pie
+                  data={chartData}
+                  dataKey="sliceUnit"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={`${INNER_PCT}%`}
+                  outerRadius={(d: ChartDatum) => outerRadiusForCount(d.count)}
+                  paddingAngle={2}
+                  cornerRadius={4}
+                  stroke="none"
                 >
                   {chartData.map((entry) => (
                     <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#9ca3af'} />
                   ))}
-                </RadialBar>
+                </Pie>
                 <Tooltip content={(props) => <CustomTooltip {...props} />} />
-              </RadialBarChart>
+              </PieChart>
             </ResponsiveContainer>
           </div>
 
@@ -128,7 +146,7 @@ export default function StatusPolarAreaChart({ data, isLoading }: Props) {
                   />
                   {row.name}
                 </span>
-                <span className="font-medium tabular-nums text-gray-900 dark:text-white">{row.value}</span>
+                <span className="font-medium tabular-nums text-gray-900 dark:text-white">{row.count}</span>
               </li>
             ))}
           </ul>
