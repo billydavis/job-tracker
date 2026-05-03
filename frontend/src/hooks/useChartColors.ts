@@ -10,10 +10,10 @@ interface ChartColors {
 function read(): ChartColors {
   const rootStyle = getComputedStyle(document.documentElement)
   return {
-    foreground: `oklch(${rootStyle.getPropertyValue('--foreground').trim()})`,
-    mutedForeground: `oklch(${rootStyle.getPropertyValue('--muted-foreground').trim()})`,
-    cardBackground: `oklch(${rootStyle.getPropertyValue('--card').trim()})`,
-    cardBorder: `oklch(${rootStyle.getPropertyValue('--border').trim()})`,
+    foreground: rootStyle.getPropertyValue('--foreground').trim(),
+    mutedForeground: rootStyle.getPropertyValue('--muted-foreground').trim(),
+    cardBackground: rootStyle.getPropertyValue('--card').trim(),
+    cardBorder: rootStyle.getPropertyValue('--border').trim(),
   }
 }
 

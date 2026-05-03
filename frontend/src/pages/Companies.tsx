@@ -1,23 +1,52 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ExternalLink, Search } from 'lucide-react'
 import ListPaginationBar from '../components/ListPaginationBar'
 import PageHeader from '../components/layouts/PageHeader'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { useCompaniesListQuery } from '../hooks/useCompanies'
-import { getListPageSize, setListPageSize } from '../lib/listPageSize'
+import { getListPageSize, setListPageSize, type ListPageSize } from '../lib/listPageSize'
 import type { CompanyFilters } from '../types'
 
 export default function Companies() {
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [limit, setLimit] = useState(() => getListPageSize())
 
-  useEffect(() => {
-    setPage(1)
-  }, [search])
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
+  const search = searchParams.get('q') ?? ''
+
+  const patchSearchParams = (mutate: (p: URLSearchParams) => void, replace = false) => {
+    const next = new URLSearchParams(searchParams)
+    mutate(next)
+    setSearchParams(next, { replace })
+  }
+
+  const setPage = (n: number) => {
+    patchSearchParams((p) => {
+      if (n <= 1) p.delete('page')
+      else p.set('page', String(n))
+    })
+  }
+
+  const setSearchQuery = (q: string) => {
+    patchSearchParams((p) => {
+      const t = q.trim()
+      if (t) p.set('q', t)
+      else p.delete('q')
+      p.delete('page')
+    }, true)
+  }
+
+  const companiesIndexPath = useMemo(() => {
+    const qs = searchParams.toString()
+    return qs ? `/companies?${qs}` : '/companies'
+  }, [searchParams])
+
+  const openCompany = (companyId: string) => {
+    navigate(`/companies/${companyId}`, { state: { companiesIndex: companiesIndexPath } })
+  }
 
   const filters: CompanyFilters = { page, limit, search }
   const { data, isLoading: loading, isFetching, error } = useCompaniesListQuery(filters)
@@ -48,7 +77,7 @@ export default function Companies() {
             <Input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search name or website…"
               className="h-9 rounded-lg border-slate-300/90 bg-white/90 py-1.5 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-400"
             />
@@ -56,7 +85,7 @@ export default function Companies() {
           {search && (
             <Button
               type="button"
-              onClick={() => setSearch('')}
+              onClick={() => patchSearchParams((p) => { p.delete('q'); p.delete('page') }, true)}
               variant="outline"
               size="sm"
               className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
@@ -98,17 +127,19 @@ export default function Companies() {
                   className="flex items-start justify-between gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
                   role="link"
                   tabIndex={0}
-                  onClick={() => navigate(`/companies/${c._id}`)}
+                  onClick={() => c._id && openCompany(c._id)}
                   onKeyDown={(e) => {
+                    if (!c._id) return
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      navigate(`/companies/${c._id}`)
+                      openCompany(c._id)
                     }
                   }}
                 >
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/companies/${c._id}`}
+                      state={{ companiesIndex: companiesIndexPath }}
                       onClick={(e) => e.stopPropagation()}
                       className="font-medium text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors block"
                     >
@@ -149,9 +180,11 @@ export default function Companies() {
             limit={limit}
             onPageChange={setPage}
             onLimitChange={(n) => {
-              setListPageSize(n)
+              setListPageSize(n as ListPageSize)
               setLimit(n)
-              setPage(1)
+              patchSearchParams((p) => {
+                p.delete('page')
+              }, true)
             }}
             disabled={isFetching}
           />

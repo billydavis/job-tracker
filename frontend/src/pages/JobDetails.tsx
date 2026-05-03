@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import MDEditor from '@uiw/react-md-editor'
 import { Pencil } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -53,8 +53,13 @@ const jobDetailsFilters: JobFilters = {
   status: '',
 }
 
+type JobsListLocationState = { fromList?: string; companiesIndex?: string }
+
 export default function JobDetails() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const listNavState = location.state as JobsListLocationState | null
+  const fromList = listNavState?.fromList
   const params = useParams<{ id: string }>()
   const id = params.id ?? ''
 
@@ -187,7 +192,7 @@ export default function JobDetails() {
         <p className="text-sm text-red-600 dark:text-red-400">Could not load this job.</p>
         <Button
           type="button"
-          onClick={() => navigate('/jobs')}
+          onClick={() => navigate(fromList ?? '/jobs')}
           variant="outline"
           size="sm"
           className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
@@ -206,7 +211,7 @@ export default function JobDetails() {
         eyebrow={(
           <Button
             type="button"
-            onClick={() => navigate('/jobs')}
+            onClick={() => navigate(fromList ?? '/jobs')}
             variant="ghost"
             size="sm"
             className="h-auto px-0 text-sm text-slate-500 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
@@ -234,7 +239,10 @@ export default function JobDetails() {
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                onClick={() => previousJob && navigate(`/jobs/${previousJob._id}`)}
+                onClick={() => {
+                  if (!previousJob) return
+                  navigate(`/jobs/${previousJob._id}`, listNavState != null ? { state: listNavState } : undefined)
+                }}
                 disabled={!previousJob}
                 variant="outline"
                 size="sm"
@@ -244,7 +252,10 @@ export default function JobDetails() {
               </Button>
               <Button
                 type="button"
-                onClick={() => nextJob && navigate(`/jobs/${nextJob._id}`)}
+                onClick={() => {
+                  if (!nextJob) return
+                  navigate(`/jobs/${nextJob._id}`, listNavState != null ? { state: listNavState } : undefined)
+                }}
                 disabled={!nextJob}
                 variant="outline"
                 size="sm"

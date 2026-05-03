@@ -12,7 +12,8 @@
   "scripts": {
     "test": "vitest",
     "test:bun": "bun test",
-    "seed": "bun ./seed.ts"
+    "seed": "bun ./seed.ts",
+    "seed:week": "bun ./seed-recent-week.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Pencil, X } from 'lucide-react'
 import type { Company, Job, JobStatus } from '../types'
@@ -37,6 +38,15 @@ export interface ApplicationJobListProps {
   companySubtitle?: string
   /** When true, render as attached to an external filter bar surface. */
   attachedToFilters?: boolean
+  /**
+   * When set (e.g. `/jobs?page=2&q=foo`), job navigation carries this in location.state
+   * so job detail "back" restores the same list URL.
+   */
+  fromListPath?: string
+  /**
+   * When opening a job from company detail, preserve companies list URL so job → company → companies still restores pagination.
+   */
+  companiesIndexPath?: string
 }
 
 export default function ApplicationJobList({
@@ -60,8 +70,17 @@ export default function ApplicationJobList({
   deletePending,
   companySubtitle,
   attachedToFilters = false,
+  fromListPath,
+  companiesIndexPath,
 }: ApplicationJobListProps) {
   const navigate = useNavigate()
+  const jobListLocationState = useMemo(() => {
+    if (!fromListPath && !companiesIndexPath) return undefined
+    const s: { fromList?: string; companiesIndex?: string } = {}
+    if (fromListPath) s.fromList = fromListPath
+    if (companiesIndexPath) s.companiesIndex = companiesIndexPath
+    return s
+  }, [fromListPath, companiesIndexPath])
   const companyName = (companyId?: string) =>
     companies.find((c) => c._id === companyId)?.name ?? companyId ?? '—'
   const showFooter = total > 0 && (totalPages > 1 || onLimitChange != null)
@@ -106,13 +125,14 @@ export default function ApplicationJobList({
                   role="link"
                   tabIndex={0}
                   onClick={() => {
-                    if (j._id) navigate(`/jobs/${j._id}`)
+                    if (!j._id) return
+                    navigate(`/jobs/${j._id}`, jobListLocationState ? { state: jobListLocationState } : undefined)
                   }}
                   onKeyDown={(e) => {
                     if (!j._id) return
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      navigate(`/jobs/${j._id}`)
+                      navigate(`/jobs/${j._id}`, jobListLocationState ? { state: jobListLocationState } : undefined)
                     }
                   }}
                 >
@@ -121,6 +141,7 @@ export default function ApplicationJobList({
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           to={`/jobs/${j._id}`}
+                          state={jobListLocationState}
                           onClick={(e) => e.stopPropagation()}
                           className="font-medium text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors block"
                         >

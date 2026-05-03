@@ -1,6 +1,13 @@
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
+import {
+  Cell,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts'
 import type { JobStats } from '../../types'
-import { useChartColors } from '../../hooks/useChartColors'
 import AnalyticsCard from './AnalyticsCard'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -28,26 +35,37 @@ interface Props {
   isLoading: boolean
 }
 
-function CustomTooltip({ active, payload, colors }: any) {
+interface ChartDatum {
+  name: string
+  value: number
+  status: string
+}
+
+interface TooltipPayloadRow {
+  /** For RadialBar this is often the dataKey string (e.g. "value"), not the category label */
+  name?: string
+  value?: number
+  payload?: ChartDatum
+}
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayloadRow[] }) {
   if (!active || !payload?.length) return null
   const row = payload[0]
+  const point = row.payload
+  const name = point?.name
+  const value = point?.value ?? row.value
+  if (name === undefined || value === undefined) return null
   return (
-    <div style={{
-      backgroundColor: colors.cardBackground,
-      border: `1px solid ${colors.cardBorder}`,
-      borderRadius: '8px',
-      padding: '8px 12px',
-      color: colors.foreground,
-      fontSize: '13px',
-    }}>
-      <p style={{ marginBottom: '2px', fontWeight: 500 }}>{row.name}</p>
-      <p>{row.value} {row.value === 1 ? 'application' : 'applications'}</p>
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[13px] text-popover-foreground shadow-md">
+      <p className="mb-0.5 font-medium">{name}</p>
+      <p className="text-muted-foreground">
+        {value} {value === 1 ? 'application' : 'applications'}
+      </p>
     </div>
   )
 }
 
-export default function StatusDonutChart({ data, isLoading }: Props) {
-  const colors = useChartColors()
+export default function StatusPolarAreaChart({ data, isLoading }: Props) {
   const chartData = (data ?? [])
     .filter((item) => item.count > 0)
     .map((item) => ({
@@ -73,22 +91,29 @@ export default function StatusDonutChart({ data, isLoading }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_150px] gap-3 items-center">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                <Pie
-                  data={chartData}
+              <RadialBarChart
+                cx="50%"
+                cy="50%"
+                innerRadius="12%"
+                outerRadius="92%"
+                data={chartData}
+                startAngle={90}
+                endAngle={-270}
+              >
+                <PolarAngleAxis type="category" dataKey="name" tick={false} axisLine={false} />
+                <PolarRadiusAxis angle={90} domain={[0, 'auto']} tick={false} axisLine={false} />
+                <RadialBar
                   dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius="82%"
-                  paddingAngle={2}
+                  cornerRadius={4}
+                  clockWise
+                  background={{ fill: 'var(--muted)' }}
                 >
                   {chartData.map((entry) => (
                     <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#9ca3af'} />
                   ))}
-                </Pie>
-                <Tooltip content={(props) => <CustomTooltip {...props} colors={colors} />} />
-              </PieChart>
+                </RadialBar>
+                <Tooltip content={(props) => <CustomTooltip {...props} />} />
+              </RadialBarChart>
             </ResponsiveContainer>
           </div>
 

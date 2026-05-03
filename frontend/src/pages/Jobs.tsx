@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import type { Job, JobFormData, JobFilters, JobStatus } from '../types'
 import { useJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation } from '../hooks/useJobs'
@@ -11,17 +12,52 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { ALL_STATUSES } from '../lib/jobApplicationUi'
-import { getListPageSize, setListPageSize } from '../lib/listPageSize'
+import { getListPageSize, setListPageSize, type ListPageSize } from '../lib/listPageSize'
 
 export default function Jobs() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | undefined>(undefined)
-  const [filterStatus, setFilterStatus] = useState<JobStatus | ''>('')
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [limit, setLimit] = useState(() => getListPageSize())
 
-  useEffect(() => { setPage(1) }, [search, filterStatus])
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
+  const search = searchParams.get('q') ?? ''
+  const filterStatus = (searchParams.get('status') ?? '') as JobStatus | ''
+
+  const patchSearchParams = (mutate: (p: URLSearchParams) => void, replace = false) => {
+    const next = new URLSearchParams(searchParams)
+    mutate(next)
+    setSearchParams(next, { replace })
+  }
+
+  const setPage = (n: number) => {
+    patchSearchParams((p) => {
+      if (n <= 1) p.delete('page')
+      else p.set('page', String(n))
+    })
+  }
+
+  const setSearchQuery = (q: string) => {
+    patchSearchParams((p) => {
+      const t = q.trim()
+      if (t) p.set('q', t)
+      else p.delete('q')
+      p.delete('page')
+    }, true)
+  }
+
+  const setFilterStatus = (st: JobStatus | '') => {
+    patchSearchParams((p) => {
+      if (st) p.set('status', st)
+      else p.delete('status')
+      p.delete('page')
+    }, true)
+  }
+
+  const fromListPath = useMemo(() => {
+    const qs = searchParams.toString()
+    return qs ? `/jobs?${qs}` : '/jobs'
+  }, [searchParams])
 
   const filters: JobFilters = { page, limit, search, status: filterStatus }
   const { data, isLoading: loading, isFetching, error } = useJobsQuery(filters)
@@ -82,7 +118,7 @@ export default function Jobs() {
             <Input
               type="search"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search title…"
               className="h-9 rounded-lg border-slate-300/90 bg-white/90 py-1.5 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-400"
             />
@@ -106,7 +142,13 @@ export default function Jobs() {
           {(filterStatus || search) && (
             <Button
               type="button"
-              onClick={() => { setFilterStatus(''); setSearch('') }}
+              onClick={() => {
+                patchSearchParams((p) => {
+                  p.delete('q')
+                  p.delete('status')
+                  p.delete('page')
+                }, true)
+              }}
               variant="outline"
               size="sm"
               className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
@@ -135,15 +177,18 @@ export default function Jobs() {
           limit={limit}
           onPageChange={setPage}
           onLimitChange={(n) => {
-            setListPageSize(n)
+            setListPageSize(n as ListPageSize)
             setLimit(n)
-            setPage(1)
+            patchSearchParams((p) => {
+              p.delete('page')
+            }, true)
           }}
           onStatusChange={handleStatusChange}
           onEdit={openEdit}
           onDelete={handleDelete}
           deletePending={deleteJobMutation.isPending}
           attachedToFilters
+          fromListPath={fromListPath}
         />
       </section>
 

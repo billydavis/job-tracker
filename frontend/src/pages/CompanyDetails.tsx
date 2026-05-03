@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import MDEditor from '@uiw/react-md-editor'
 import ApplicationJobList from '../components/ApplicationJobList'
@@ -44,18 +44,46 @@ function isValidHttpUrl(s: string): boolean {
   }
 }
 
+type CompanyDetailsLocationState = { companiesIndex?: string }
+
 export default function CompanyDetails() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const routeState = location.state as CompanyDetailsLocationState | null
+  const companiesIndexPath = routeState?.companiesIndex
   const queryClient = useQueryClient()
   const params = useParams<{ id: string }>()
   const id = params.id ?? ''
-  const [jobPage, setJobPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const jobPage = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
+  const prevCompanyIdRef = useRef('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | undefined>(undefined)
 
   useEffect(() => {
-    setJobPage(1)
-  }, [id])
+    if (prevCompanyIdRef.current && prevCompanyIdRef.current !== id) {
+      setSearchParams((sp) => {
+        const n = new URLSearchParams(sp)
+        n.delete('page')
+        return n
+      }, { replace: true })
+    }
+    prevCompanyIdRef.current = id
+  }, [id, setSearchParams])
+
+  const setJobPage = (p: number) => {
+    setSearchParams((sp) => {
+      const n = new URLSearchParams(sp)
+      if (p <= 1) n.delete('page')
+      else n.set('page', String(p))
+      return n
+    })
+  }
+
+  const fromListPath = useMemo(() => {
+    const qs = searchParams.toString()
+    return qs ? `/companies/${id}?${qs}` : `/companies/${id}`
+  }, [id, searchParams])
 
   const { data: company, isLoading: companyLoading, error: companyError } = useCompanyQuery(id)
   const { data: companies = [] } = useCompaniesQuery()
@@ -185,12 +213,12 @@ export default function CompanyDetails() {
         <p className="text-sm text-red-600 dark:text-red-400">Could not load this company.</p>
         <Button
           type="button"
-          onClick={() => navigate('/jobs')}
+          onClick={() => navigate(companiesIndexPath ?? '/jobs')}
           variant="outline"
           size="sm"
           className="rounded-lg border-slate-300/90 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
         >
-          Back to applications
+          {companiesIndexPath ? 'Back to companies' : 'Back to applications'}
         </Button>
       </div>
     )
@@ -209,7 +237,10 @@ export default function CompanyDetails() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                if (companiesIndexPath) navigate(companiesIndexPath)
+                else navigate(-1)
+              }}
               variant="ghost"
               size="sm"
               className="h-auto px-0 text-sm text-slate-500 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
@@ -217,7 +248,7 @@ export default function CompanyDetails() {
               ← Back
             </Button>
             <Link
-              to="/companies"
+              to={companiesIndexPath ?? '/companies'}
               className="text-sm text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               All companies
@@ -356,6 +387,8 @@ export default function CompanyDetails() {
           onDelete={handleDelete}
           deletePending={deleteJobMutation.isPending}
           companySubtitle={company.name}
+          fromListPath={fromListPath}
+          companiesIndexPath={companiesIndexPath}
         />
       </div>
 

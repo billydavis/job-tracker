@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { BriefcaseBusiness, Building2, HandCoins, TrendingUp } from 'lucide-react'
 import RecentApplicationsWidget from '../components/analytics/RecentApplicationsWidget'
-import StatusDonutChart from '../components/analytics/StatusDonutChart'
+import StatusPolarAreaChart from '../components/analytics/StatusPolarAreaChart'
 import WeeklyApplicationsWidget from '../components/analytics/WeeklyApplicationsWidget'
 import JobModal from '../components/JobModal'
 import { Button } from '../components/ui/button'
@@ -131,7 +131,7 @@ export default function Dashboard() {
 
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
         <div className="xl:col-span-4">
-          <StatusDonutChart data={overallData?.statusCounts} isLoading={overallLoading} />
+          <StatusPolarAreaChart data={overallData?.statusCounts} isLoading={overallLoading} />
         </div>
         <div className="xl:col-span-8">
           <RecentApplicationsWidget data={overallData?.recentApplications} isLoading={overallLoading} />
